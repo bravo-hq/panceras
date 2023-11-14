@@ -233,7 +233,7 @@ if __name__ == "__main__":
 
     summary(
         model_d_lka_former,
-        input_size=[batch_size, 2, 96, 96, 96],
+        input_size=[batch_size, 1, 96, 96, 96],
         col_names=["input_size", "output_size", "num_params", "mult_adds", "trainable"],
         mode="train",
     )
