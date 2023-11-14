@@ -18,6 +18,7 @@ from networks.vnet import VNet
 from networks.ResNet34 import Resnet34
 from networks.unetr import UNETR
 import yaml
+from torchinfo import summary
 
 # from networks.d_lka_former.d_lka_net_synapse import D_LKA_Net
 # from networks.d_lka_former.transformerblock import TransformerBlock_3D_single_deform_LKA, TransformerBlock
@@ -230,6 +231,12 @@ if __name__ == "__main__":
     #         dec_cnn_tcv_kernel_sizes= [7,9],
     #     ).cuda()
 
+    summary(
+        model_d_lka_former,
+        input_size=[batch_size, 2, 96, 96, 96],
+        col_names=["input_size", "output_size", "num_params", "mult_adds", "trainable"],
+        mode="train",
+    )
     db_train = LAHeart(
         common_transform=transforms.Compose(
             [
