@@ -46,7 +46,7 @@ parser.add_argument(
 )  # 6000
 parser.add_argument("--batch_size", type=int, default=3, help="batch_size per gpu")
 parser.add_argument(
-    "--labeled_bs", type=int, default=1, help="labeled_batch_size per gpu"
+    "--labeled_bs", type=int, default=3, help="labeled_batch_size per gpu"
 )
 parser.add_argument(
     "--base_lr", type=float, default=0.05, help="maximum epoch number to train"
@@ -95,10 +95,12 @@ max_iterations = args.max_iterations
 base_lr = args.base_lr
 labeled_bs = args.labeled_bs
 
+
 config = load_config(args.config)
 print_config(config)
 train_data_path = config["dataset"]["train"]["params"]["base_dir"]
 batch_size = config["data_loader"]["train"]["batch_size"]
+labeled_bs = batch_size
 max_iterations = config["max_iterations"]
 base_lr = config["training"]["optimizer"]["params"]["lr"]
 snapshot_path = config["snapshot_path"]
@@ -160,14 +162,14 @@ def log_test_outputs(avg_metrics, logits, labels, writer, iter_num=0):
         total_loss_seg_dice = []    
         for logit,label in zip(logits,labels):
             ## calculate the supervised loss
-            logit=torch.as_tensor(logit)
-            label=torch.as_tensor(label)
-            # lka_loss_seg = F.cross_entropy(
-            #     logit[:labeled_bs], label[:labeled_bs]
-            # )
-            # lka_outputs_soft = F.softmax(logit, dim=1)
+            logit=torch.as_tensor(logit).unsqueeze(0)
+            label=torch.as_tensor(label).unsqueeze(0)
+            lka_loss_seg = F.cross_entropy(
+                logit, label
+            )
+            lka_outputs_soft = F.softmax(logit, dim=1)
             lka_loss_seg_dice = losses.dice_loss(
-                lka_outputs_soft[:labeled_bs, 1, :, :, :], label[:labeled_bs] == 1
+                lka_outputs_soft[:, 1, :, :, :], label[:] == 1
             )
             total_loss.append(lka_loss_seg + lka_loss_seg_dice)
             total_loss_seg.append(lka_loss_seg)
