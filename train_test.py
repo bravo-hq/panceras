@@ -260,7 +260,7 @@ if __name__ == "__main__":
 
 
     with open(
-        os.path.join(train_data_path, "Pancreas", "Flods", config["test"]["optimizer"]["params"]['test_flod']), "r"
+        os.path.join(train_data_path, "Pancreas", "Flods", config["dataset"]["test"]["params"]['test_flod']), "r"
     ) as f:  # todo change test flod
         image_list = f.readlines()
     image_list = [
