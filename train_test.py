@@ -72,7 +72,7 @@ parser.add_argument(
 args = parser.parse_args()
 
 
-def create_snapshot_directory(base_path, base_name):
+def create_snapshot_directory(base_path, base_name,config):
     dir_number = 0
     dir_path = os.path.join(base_path,config["model"]["name"], f"{base_name}{dir_number}/")
 
