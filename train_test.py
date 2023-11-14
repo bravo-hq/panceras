@@ -17,6 +17,7 @@ from torch.utils.data import DataLoader
 from networks.vnet import VNet
 from networks.ResNet34 import Resnet34
 from networks.unetr import UNETR
+import yaml
 
 # from networks.d_lka_former.d_lka_net_synapse import D_LKA_Net
 # from networks.d_lka_former.transformerblock import TransformerBlock_3D_single_deform_LKA, TransformerBlock
@@ -265,6 +266,9 @@ if __name__ == "__main__":
     image_list = [
         os.path.join(train_data_path, item.replace("\n", "")) for item in image_list
     ]
+    
+    with open(os.path.join(snapshot_path, "hpram.yaml"), "w") as yaml_file:
+        yaml.dump(config, yaml_file)
 
     for epoch_num in tqdm(range(max_epoch), ncols=70):
         time1 = time.time()
