@@ -30,7 +30,7 @@ def test_all_case(
     preproc_fn=None,
 ):
     total_metric = 0.0
-    predictions_list = []
+    logits_list = []
     labels_list = []
     for image_path in tqdm(image_list):
         # id = image_path.split('/')[-1]
@@ -41,7 +41,7 @@ def test_all_case(
 
         if preproc_fn is not None:
             image = preproc_fn(image)
-        prediction, score_map = test_single_case(
+        prediction, score_map, logits_map = test_single_case(
             vnet,
             resnet=None,
             image=image,
@@ -50,7 +50,7 @@ def test_all_case(
             patch_size=patch_size,
             num_classes=num_classes,
         )
-        predictions_list.append(prediction)
+        logits_list.append(logits_map)
         labels_list.append(label)
         if np.sum(prediction) == 0:
             single_metric = (0, 0, 0, 0)
@@ -68,7 +68,7 @@ def test_all_case(
     avg_metric = total_metric / len(image_list)
     print("average metric is {}".format(avg_metric))
 
-    return avg_metric, predictions_list, labels_list
+    return avg_metric, logits_list, labels_list
 
 
 def test_single_case(
@@ -118,6 +118,7 @@ def test_single_case(
     print("{}, {}, {}".format(sx, sy, sz))
     score_map = np.zeros((num_classes,) + image.shape).astype(np.float32)
     cnt = np.zeros(image.shape).astype(np.float32)
+    logits_map = np.zeros((num_classes,) + image.shape).astype(np.float32)
 
     for x in range(0, sx):
         xs = min(stride_xy * x, ww - patch_size[0])
@@ -136,6 +137,13 @@ def test_single_case(
                 test_patch = torch.from_numpy(test_patch).cuda()
                 if vnet is not None:
                     y1 = vnet(test_patch)
+                    logits_cpu = y1.cpu().detach().numpy()
+                    logits_map[
+                    :,
+                    xs : xs + patch_size[0],
+                    ys : ys + patch_size[1],
+                    zs : zs + patch_size[2],
+                    ] += logits_cpu[0, :, :, :, :]
                     y = F.softmax(y1, dim=1)
                     y = y.cpu().detach().data.numpy()
                     y = y[0, :, :, :, :]
@@ -183,7 +191,7 @@ def test_single_case(
         score_map = score_map[
             :, wl_pad : wl_pad + w, hl_pad : hl_pad + h, dl_pad : dl_pad + d
         ]
-    return label_map, score_map
+    return label_map, score_map, logits_map
 
 
 def cal_dice(prediction, label, num=2):
