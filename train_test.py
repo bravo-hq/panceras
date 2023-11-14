@@ -155,26 +155,26 @@ def log_test_outputs(avg_metrics, logits, labels, writer, iter_num=0):
         writer.add_scalar("test/Jaccard_metric", avg_metrics[1], iter_num)
         writer.add_scalar("test/HD_metric", avg_metrics[2], iter_num)
         writer.add_scalar("test/ASD_metric", avg_metrics[3], iter_num)
-        total_loss = []
-        total_loss_seg = []
-        total_loss_seg_dice = []    
-        for logit,label in zip(logits,labels):
-            ## calculate the supervised loss
-            logit=torch.as_tensor(logit)
-            label=torch.as_tensor(label)
-            lka_loss_seg = F.cross_entropy(
-                logit[:labeled_bs], label[:labeled_bs]
-            )
-            lka_outputs_soft = F.softmax(logit, dim=1)
-            lka_loss_seg_dice = losses.dice_loss(
-                lka_outputs_soft[:labeled_bs, 1, :, :, :], label[:labeled_bs] == 1
-            )
-            total_loss.append(lka_loss_seg + lka_loss_seg_dice)
-            total_loss_seg.append(lka_loss_seg)
-            total_loss_seg_dice.append(lka_loss_seg_dice)
-        writer.add_scalar("test_loss/total_loss", torch.stack(total_loss).mean(), iter_num)
-        writer.add_scalar("test_loss/lka_loss_seg", torch.stack(total_loss_seg).mean(), iter_num)
-        writer.add_scalar("test_loss/lka_loss_seg_dice", torch.stack(total_loss_seg_dice).mean(), iter_num)   
+        # total_loss = []
+        # total_loss_seg = []
+        # total_loss_seg_dice = []    
+        # for logit,label in zip(logits,labels):
+        #     ## calculate the supervised loss
+        #     logit=torch.as_tensor(logit)
+        #     label=torch.as_tensor(label)
+        #     # lka_loss_seg = F.cross_entropy(
+        #     #     logit[:labeled_bs], label[:labeled_bs]
+        #     # )
+        #     # lka_outputs_soft = F.softmax(logit, dim=1)
+        #     lka_loss_seg_dice = losses.dice_loss(
+        #         lka_outputs_soft[:labeled_bs, 1, :, :, :], label[:labeled_bs] == 1
+        #     )
+        #     total_loss.append(lka_loss_seg + lka_loss_seg_dice)
+        #     total_loss_seg.append(lka_loss_seg)
+        #     total_loss_seg_dice.append(lka_loss_seg_dice)
+        # writer.add_scalar("test_loss/total_loss", torch.stack(total_loss).mean(), iter_num)
+        # writer.add_scalar("test_loss/lka_loss_seg", torch.stack(total_loss_seg).mean(), iter_num)
+        # writer.add_scalar("test_loss/lka_loss_seg_dice", torch.stack(total_loss_seg_dice).mean(), iter_num)   
 
 if __name__ == "__main__":
     ## make logger file
@@ -363,10 +363,10 @@ if __name__ == "__main__":
                 snapshot_path, f"epoch_{str(epoch_num)}", "prediction"
             )
             os.makedirs(test_save_path, exist_ok=True)
-            avg_metrics, logits, labels = test_calculate_metric(
+            avg_metrics, predictions, labels = test_calculate_metric(
                 epoch_num, model_d_lka_former, snapshot_path, test_save_path, image_list
             )
-            log_test_outputs(avg_metrics, logits, labels, writer, iter_num=iter_num)
+            log_test_outputs(avg_metrics, predictions, labels, writer, iter_num=iter_num)
 
         if iter_num >= max_iterations:
             break
@@ -383,10 +383,10 @@ if __name__ == "__main__":
         snapshot_path, f"epoch_{str(max_iterations)}", "prediction"
     )
     os.makedirs(test_save_path, exist_ok=True)
-    metric, logits, labels = test_calculate_metric(
+    metric, predictions, labels = test_calculate_metric(
         max_iterations, model_d_lka_former, snapshot_path, test_save_path, image_list
     )
-    log_test_outputs(metric, logits, labels, writer, iter_num=max_iterations)
+    log_test_outputs(metric, predictions, labels, writer, iter_num=max_iterations)
     print("iter:", max_iterations)
     print(metric)
 

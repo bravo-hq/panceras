@@ -103,7 +103,7 @@ def test_calculate_metric(
 
     dlka_former.eval()
 
-    avg_metric, logits_list, label_list = test_all_case(
+    avg_metric, predictions_list, label_list = test_all_case(
         dlka_former,
         dlka_former,
         image_list,
@@ -115,7 +115,7 @@ def test_calculate_metric(
         test_save_path=test_save_path,
     )
 
-    return avg_metric, logits_list, label_list
+    return avg_metric, predictions_list, label_list
 
 
 if __name__ == "__main__":

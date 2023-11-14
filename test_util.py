@@ -30,7 +30,7 @@ def test_all_case(
     preproc_fn=None,
 ):
     total_metric = 0.0
-    logit_list = []
+    predictions_list = []
     labels_list = []
     for image_path in tqdm(image_list):
         # id = image_path.split('/')[-1]
@@ -41,7 +41,7 @@ def test_all_case(
 
         if preproc_fn is not None:
             image = preproc_fn(image)
-        prediction, score_map, y1 = test_single_case(
+        prediction, score_map = test_single_case(
             vnet,
             resnet=None,
             image=image,
@@ -50,7 +50,7 @@ def test_all_case(
             patch_size=patch_size,
             num_classes=num_classes,
         )
-        logit_list.append(y1.cpu().detach().data.numpy())
+        predictions_list.append(prediction)
         labels_list.append(label)
         if np.sum(prediction) == 0:
             single_metric = (0, 0, 0, 0)
@@ -68,7 +68,7 @@ def test_all_case(
     avg_metric = total_metric / len(image_list)
     print("average metric is {}".format(avg_metric))
 
-    return avg_metric, logit_list, labels_list
+    return avg_metric, predictions_list, labels_list
 
 
 def test_single_case(
@@ -183,7 +183,7 @@ def test_single_case(
         score_map = score_map[
             :, wl_pad : wl_pad + w, hl_pad : hl_pad + h, dl_pad : dl_pad + d
         ]
-    return label_map, score_map, y1
+    return label_map, score_map
 
 
 def cal_dice(prediction, label, num=2):
