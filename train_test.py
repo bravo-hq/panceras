@@ -73,13 +73,13 @@ args = parser.parse_args()
 
 
 def create_snapshot_directory(base_path, base_name):
-    dir_number = 1
-    dir_path = os.path.join(base_path, f"{base_name}{dir_number}/")
+    dir_number = 0
+    dir_path = os.path.join(base_path,config["model"]["name"], f"{base_name}{dir_number}/")
 
     # Check if the directory exists and increment the number if it does
     while os.path.exists(dir_path):
         dir_number += 1
-        dir_path = os.path.join(base_path, f"{base_name}{dir_number}/")
+        dir_path = os.path.join(base_path,config["model"]["name"], f"{base_name}{dir_number}/")
 
     # Create the directory
     os.makedirs(dir_path)
@@ -102,7 +102,7 @@ batch_size = config["data_loader"]["train"]["batch_size"]
 max_iterations = config["max_iterations"]
 base_lr = config["training"]["optimizer"]["params"]["lr"]
 snapshot_path = config["snapshot_path"]
-snapshot_path = create_snapshot_directory(snapshot_path, args.exp)
+snapshot_path = create_snapshot_directory(snapshot_path, 'version_', config)
 test_every_epochs = config["test_every_epochs"]
 
 if args.deterministic:
