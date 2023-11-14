@@ -162,8 +162,8 @@ def log_test_outputs(avg_metrics, logits, labels, writer, iter_num=0):
         total_loss_seg_dice = []    
         for logit,label in zip(logits,labels):
             ## calculate the supervised loss
-            logit=torch.as_tensor(logit).unsqueeze(0)
-            label=torch.as_tensor(label).unsqueeze(0)
+            logit=torch.as_tensor(logit).unsqueeze(0).float()
+            label=torch.as_tensor(label).unsqueeze(0).long()
             lka_loss_seg = F.cross_entropy(
                 logit, label
             )

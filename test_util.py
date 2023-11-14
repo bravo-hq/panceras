@@ -191,6 +191,9 @@ def test_single_case(
         score_map = score_map[
             :, wl_pad : wl_pad + w, hl_pad : hl_pad + h, dl_pad : dl_pad + d
         ]
+        logits_map = logits_map[
+            :, wl_pad : wl_pad + w, hl_pad : hl_pad + h, dl_pad : dl_pad + d
+        ]
     return label_map, score_map, logits_map
 
 
