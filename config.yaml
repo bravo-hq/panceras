@@ -1,6 +1,6 @@
 max_iterations: 10000
 # snapshot_path: "E:/panceras/output/"
-snapshot_name: "/cabinet/yousef/panceras/outputs/"
+snapshot_path: "/cabinet/yousef/panceras/outputs/"
 test_every_epochs: 20
 dataset:
   train:
