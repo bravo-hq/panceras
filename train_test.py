@@ -160,6 +160,8 @@ def log_test_outputs(avg_metrics, logits, labels, writer, iter_num=0):
         total_loss_seg_dice = []    
         for logit,label in zip(logits,labels):
             ## calculate the supervised loss
+            logit=torch.as_tensor(logit)
+            label=torch.as_tensor(label)
             lka_loss_seg = F.cross_entropy(
                 logit[:labeled_bs], label[:labeled_bs]
             )
@@ -170,9 +172,9 @@ def log_test_outputs(avg_metrics, logits, labels, writer, iter_num=0):
             total_loss.append(lka_loss_seg + lka_loss_seg_dice)
             total_loss_seg.append(lka_loss_seg)
             total_loss_seg_dice.append(lka_loss_seg_dice)
-        writer.add_scalar("test_loss/total_loss", np.mean(total_loss), iter_num)
-        writer.add_scalar("test_loss/lka_loss_seg", np.mean(total_loss_seg), iter_num)
-        writer.add_scalar("test_loss/lka_loss_seg_dice", np.mean(total_loss_seg_dice), iter_num)   
+        writer.add_scalar("test_loss/total_loss", torch.stack(total_loss).mean(), iter_num)
+        writer.add_scalar("test_loss/lka_loss_seg", torch.stack(total_loss_seg).mean(), iter_num)
+        writer.add_scalar("test_loss/lka_loss_seg_dice", torch.stack(total_loss_seg_dice).mean(), iter_num)   
 
 if __name__ == "__main__":
     ## make logger file
