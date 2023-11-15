@@ -18,6 +18,7 @@ class LAHeart(Dataset):
         train_flod=None,
         common_transform=None,
         sp_transform=None,
+        data_type='LA'
     ):
         self._base_dir = base_dir
         self.common_transform = common_transform
@@ -26,7 +27,7 @@ class LAHeart(Dataset):
         print(train_flod)
         if split == "train":
             with open(
-                os.path.join(self._base_dir, "Pancreas", "Flods", train_flod), "r"
+                os.path.join(self._base_dir, data_type, "Flods", train_flod), "r"
             ) as f:  # /LA/Flods/
                 self.image_list = f.readlines()
         self.image_list = [item.replace("\n", "") for item in self.image_list]

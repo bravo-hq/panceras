@@ -66,7 +66,7 @@ parser.add_argument(
     "--consistency_rampup", type=float, default=40.0, help="consistency_rampup"
 )
 parser.add_argument(
-    "--config", type=str, default="./config.yaml", help="configuration file"
+    "--config", type=str, default="./config_Pancreas.yaml", help="configuration file"
 )
 
 args = parser.parse_args()
@@ -106,6 +106,12 @@ base_lr = config["training"]["optimizer"]["params"]["lr"]
 snapshot_path = config["snapshot_path"]
 snapshot_path = create_snapshot_directory(snapshot_path, 'version_', config)
 test_every_epochs = config["test_every_epochs"]
+# Assuming the format is consistent: './config_{name}.yaml'
+prefix = "./config_"
+suffix = ".yaml"
+
+# Extract the name part
+data_type = args.config[len(prefix): -len(suffix)]
 
 if args.deterministic:
     cudnn.benchmark = False
@@ -116,7 +122,10 @@ if args.deterministic:
     torch.cuda.manual_seed(args.seed)
 
 num_classes = 2
-patch_size = (96, 96, 96)  # 96x96x96 for Pancreas
+if data_type=="Pancreas":
+    patch_size = (96, 96, 96)  # 96x96x96 for Pancreas
+else:
+    patch_size = (112, 112, 80)
 T = 0.1
 Good_student = 0  # 0: vnet 1:resnet
 
@@ -237,7 +246,7 @@ if __name__ == "__main__":
 
     summary(
         model_d_lka_former,
-        input_size=[batch_size, 1, 96, 96, 96],
+        input_size=[batch_size, 1, 96, 96, 96] if data_type=="Pancreas" else [batch_size, 1, 112, 112, 80],
         col_names=["input_size", "output_size", "num_params", "mult_adds", "trainable"],
         mode="train",
     )
@@ -252,6 +261,7 @@ if __name__ == "__main__":
                 ToTensor(),
             ]
         ),
+        data_type=data_type,
         **config["dataset"]["train"]["params"],
     )
 
@@ -271,7 +281,7 @@ if __name__ == "__main__":
 
 
     with open(
-        os.path.join(train_data_path, "Pancreas", "Flods", config["dataset"]["test"]["params"]['test_flod']), "r"
+        os.path.join(train_data_path, data_type, "Flods", config["dataset"]["test"]["params"]['test_flod']), "r"
     ) as f:  # todo change test flod
         image_list = f.readlines()
     image_list = [
@@ -297,7 +307,7 @@ if __name__ == "__main__":
             )
             # Transfer to GPU
             lka_input, lka_label = volume_batch1.cuda(), volume_label1.cuda()
-
+            print(f"lka_input.shape:{lka_input.shape}")
             # Network forward
             lka_outputs = model_d_lka_former(lka_input)
 
@@ -366,7 +376,7 @@ if __name__ == "__main__":
             )
             os.makedirs(test_save_path, exist_ok=True)
             avg_metrics, logits, labels = test_calculate_metric(
-                epoch_num, model_d_lka_former, snapshot_path, test_save_path, image_list
+                epoch_num, model_d_lka_former, snapshot_path, test_save_path, image_list, data_type
             )
             log_test_outputs(avg_metrics, logits, labels, writer, iter_num=iter_num)
 
@@ -379,6 +389,9 @@ if __name__ == "__main__":
         f"epoch_{str(max_iterations)}",
         f"d_lka_former_iter_{str(max_iterations)}.pth",
     )
+    os.makedirs(
+        os.path.join(snapshot_path, f"epoch_{str(max_iterations)}"), exist_ok=True
+    )
     torch.save(model_d_lka_former.state_dict(), save_mode_path_lka_net)
     logging.info("save model to {}".format(save_mode_path_lka_net))
     test_save_path = os.path.join(
@@ -386,7 +399,7 @@ if __name__ == "__main__":
     )
     os.makedirs(test_save_path, exist_ok=True)
     metric, logits, labels = test_calculate_metric(
-        max_iterations, model_d_lka_former, snapshot_path, test_save_path, image_list
+        max_iterations, model_d_lka_former, snapshot_path, test_save_path, image_list, data_type
     )
     log_test_outputs(metric, logits, labels, writer, iter_num=max_iterations)
     print("iter:", max_iterations)

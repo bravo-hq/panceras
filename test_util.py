@@ -135,6 +135,7 @@ def test_single_case(
                     np.expand_dims(test_patch, axis=0), axis=0
                 ).astype(np.float32)
                 test_patch = torch.from_numpy(test_patch).cuda()
+                print(f"test_patch.shape: {test_patch.shape}")
                 if vnet is not None:
                     y1 = vnet(test_patch)
                     logits_cpu = y1.cpu().detach().numpy()

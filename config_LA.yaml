@@ -1,18 +1,18 @@
 max_iterations: 10000
-# snapshot_path: "E:/panceras/output/"
-snapshot_path: "/cabinet/yousef/panceras/outputs/"
+# snapshot_path: "E:/Left Atrial/output/"
+snapshot_path: "/cabinet/yousef/Left Atrial/outputs/"
 test_every_epochs: 20
 dataset:
   train:
     params:
-      # base_dir: "E:/panceras/panceras"
-      base_dir: "/cabinet/dataset/panceras"
+      # base_dir: "E:/Left Atrial/Left Atrial"
+      base_dir: "/cabinet/dataset/Left Atrial"
       split: 'train'
       train_flod: 'train0.list'
   test:
     params:
-      # base_dir: "E:/panceras/panceras"
-      base_dir: "/cabinet/dataset/panceras"
+      # base_dir: "E:/Left Atrial/Left Atrial"
+      base_dir: "/cabinet/dataset/Left Atrial"
       split: 'test'
       test_flod: 'test0.list'
 data_loader:
@@ -37,7 +37,7 @@ training:
         mode: 'min'
   epochs: 300
 model: 
-  name: 'MainModel_SGD'
+  name: 'MainModel_SGD_LA'
   params:
     # in_channels: 4
     # out_channels: 3
