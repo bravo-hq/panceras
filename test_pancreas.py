@@ -112,7 +112,7 @@ def test_calculate_metric(
         dlka_former,
         image_list,
         num_classes=2,
-        patch_size=(96, 96, 96) if data_type=="Pancreas" else (112, 112, 80),
+        patch_size=(96, 96, 96) if data_type=="Pancreas" else (128, 128, 96),
         stride_xy=16 if data_type=="Pancreas" else 18,
         stride_z=16 if data_type=="Pancreas" else 4,
         save_result=True,

@@ -31,6 +31,7 @@ class LAHeart(Dataset):
             ) as f:  # /LA/Flods/
                 self.image_list = f.readlines()
         self.image_list = [item.replace("\n", "") for item in self.image_list]
+        self.data_type = data_type  # LA or pancreas
 
         print("total {} unlabel_samples".format(len(self.image_list)))
 
@@ -40,9 +41,14 @@ class LAHeart(Dataset):
     def __getitem__(self, idx):
         # print("Index: {}".format(idx))
         image_name = self.image_list[idx]
-        h5f = h5py.File(
-            os.path.join(self._base_dir, image_name), "r"
-        )  # +"/mri_norm2.h5", 'r')
+        # Determine the file path based on the data type
+        if self.data_type == "Pancreas":
+            file_path = os.path.join(self._base_dir, image_name)
+        else:
+            file_path = os.path.join(self._base_dir, image_name, 'mri_norm2.h5')
+
+        # Open the file using h5py
+        h5f = h5py.File(file_path, "r") # +"/mri_norm2.h5", 'r')
         image = h5f["image"][:]
         label = h5f["label"][:]
         sample = {"image": image, "label": label}

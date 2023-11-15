@@ -44,7 +44,7 @@ model:
     # f_maps: 32
 
 
-    spatial_shapes: [96, 96, 96]
+    spatial_shapes: [128, 128, 96]
     in_channels: 1
     out_channels: 2
                  

@@ -125,7 +125,7 @@ num_classes = 2
 if data_type=="Pancreas":
     patch_size = (96, 96, 96)  # 96x96x96 for Pancreas
 else:
-    patch_size = (112, 112, 80)
+    patch_size = (128, 128, 96)
 T = 0.1
 Good_student = 0  # 0: vnet 1:resnet
 
@@ -246,7 +246,7 @@ if __name__ == "__main__":
 
     summary(
         model_d_lka_former,
-        input_size=[batch_size, 1, 96, 96, 96] if data_type=="Pancreas" else [batch_size, 1, 112, 112, 80],
+        input_size=[batch_size, 1, 96, 96, 96] if data_type=="Pancreas" else [batch_size, 1, 128, 128, 96],
         col_names=["input_size", "output_size", "num_params", "mult_adds", "trainable"],
         mode="train",
     )
@@ -284,9 +284,14 @@ if __name__ == "__main__":
         os.path.join(train_data_path, data_type, "Flods", config["dataset"]["test"]["params"]['test_flod']), "r"
     ) as f:  # todo change test flod
         image_list = f.readlines()
-    image_list = [
-        os.path.join(train_data_path, item.replace("\n", "")) for item in image_list
-    ]
+    if data_type=="Pancreas":
+        image_list = [
+            os.path.join(train_data_path, item.replace("\n", "")) for item in image_list
+        ]
+    else:
+        image_list = [
+            os.path.join(train_data_path, item.replace("\n", ""),  'mri_norm2.h5') for item in image_list
+        ]
     
     with open(os.path.join(snapshot_path, "hpram.yaml"), "w") as yaml_file:
         yaml.dump(config, yaml_file)

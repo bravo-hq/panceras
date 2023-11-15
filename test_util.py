@@ -35,6 +35,8 @@ def test_all_case(
     for image_path in tqdm(image_list):
         # id = image_path.split('/')[-1]
         id = os.path.basename(image_path)
+        if id == "mri_norm2.h5":
+            id = os.path.basename(os.path.dirname(image_path))
         h5f = h5py.File(image_path, "r")
         image = h5f["image"][:]
         label = h5f["label"][:]
