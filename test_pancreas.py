@@ -94,7 +94,7 @@ def test_calculate_metric(
     if data_type=="Pancreas":
         input_res = (1, 96, 96, 96)
     else:
-        input_res = (1, 112, 112, 80)
+        input_res = (1, 96, 96, 96)
     input = torch.ones(()).new_empty(
         (1, *input_res),
         dtype=next(dlka_former.parameters()).dtype,
@@ -112,7 +112,7 @@ def test_calculate_metric(
         dlka_former,
         image_list,
         num_classes=2,
-        patch_size=(96, 96, 96) if data_type=="Pancreas" else (128, 128, 96),
+        patch_size=(96, 96, 96) if data_type=="Pancreas" else (96, 96, 96),
         stride_xy=16 if data_type=="Pancreas" else 18,
         stride_z=16 if data_type=="Pancreas" else 4,
         save_result=True,

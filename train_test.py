@@ -125,7 +125,7 @@ num_classes = 2
 if data_type=="Pancreas":
     patch_size = (96, 96, 96)  # 96x96x96 for Pancreas
 else:
-    patch_size = (128, 128, 96)
+    patch_size = (96, 96, 96)
 T = 0.1
 Good_student = 0  # 0: vnet 1:resnet
 
@@ -246,7 +246,7 @@ if __name__ == "__main__":
 
     summary(
         model_d_lka_former,
-        input_size=[batch_size, 1, 96, 96, 96] if data_type=="Pancreas" else [batch_size, 1, 128, 128, 96],
+        input_size=[batch_size, 1, 96, 96, 96] if data_type=="Pancreas" else [batch_size, 1, 96, 96, 96],
         col_names=["input_size", "output_size", "num_params", "mult_adds", "trainable"],
         mode="train",
     )
@@ -312,7 +312,7 @@ if __name__ == "__main__":
             )
             # Transfer to GPU
             lka_input, lka_label = volume_batch1.cuda(), volume_label1.cuda()
-            print(f"lka_input.shape:{lka_input.shape}")
+            
             # Network forward
             lka_outputs = model_d_lka_former(lka_input)
 
