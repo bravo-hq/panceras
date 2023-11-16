@@ -65,38 +65,46 @@ parser.add_argument("--consistency", type=float, default=0.1, help="consistency"
 parser.add_argument(
     "--consistency_rampup", type=float, default=40.0, help="consistency_rampup"
 )
+# parser.add_argument(
+#     "--config", type=str, default="./config_Pancreas.yaml", help="configuration file"
+# )
 parser.add_argument(
-    "--config", type=str, default="./config_Pancreas.yaml", help="configuration file"
+    "--model", type=str, default="dlka_former", help="configuration file"
 )
-
+parser.add_argument(
+    "--datatype", type=str, default="Pancreas", help="configuration file"
+)
+parser.add_argument(
+    "--fold", type=int, default=0, help="fold number for cross validation"
+)
 args = parser.parse_args()
 
 
 def create_snapshot_directory(base_path, base_name,config):
     dir_number = 0
-    dir_path = os.path.join(base_path,config["model"]["name"], f"{base_name}{dir_number}/")
+    dir_path = os.path.join(base_path,f"{config['model']['name']}_fold{args.fold}", f"{base_name}{dir_number}/")
 
     # Check if the directory exists and increment the number if it does
     while os.path.exists(dir_path):
         dir_number += 1
-        dir_path = os.path.join(base_path,config["model"]["name"], f"{base_name}{dir_number}/")
+        dir_path = os.path.join(base_path,f"{config['model']['name']}_fold{args.fold}", f"{base_name}{dir_number}/")
 
     # Create the directory
     os.makedirs(dir_path)
     return dir_path
 
 
-train_data_path = args.root_path
-snapshot_path = "./model/" + args.exp + "/"
+# train_data_path = args.root_path
+# snapshot_path = "./model/" + args.exp + "/"
 
 # os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
-batch_size = args.batch_size * len(args.gpu.split(","))
-max_iterations = args.max_iterations
-base_lr = args.base_lr
-labeled_bs = args.labeled_bs
+# batch_size = args.batch_size * len(args.gpu.split(","))
+# max_iterations = args.max_iterations
+# base_lr = args.base_lr
+# labeled_bs = args.labeled_bs
 
-
-config = load_config(args.config)
+config_path=os.path.join(os.getcwd(),"configs",args.model, f"config_{args.datatype}.yaml")
+config = load_config(config_path)
 print_config(config)
 train_data_path = config["dataset"]["train"]["params"]["base_dir"]
 batch_size = config["data_loader"]["train"]["batch_size"]
@@ -106,12 +114,8 @@ base_lr = config["training"]["optimizer"]["params"]["lr"]
 snapshot_path = config["snapshot_path"]
 snapshot_path = create_snapshot_directory(snapshot_path, 'version_', config)
 test_every_epochs = config["test_every_epochs"]
-# Assuming the format is consistent: './config_{name}.yaml'
-prefix = "./config_"
-suffix = ".yaml"
-
-# Extract the name part
-data_type = args.config[len(prefix): -len(suffix)]
+data_type = config['datatype']
+fold = args.fold
 
 if args.deterministic:
     cudnn.benchmark = False
@@ -262,6 +266,7 @@ if __name__ == "__main__":
             ]
         ),
         data_type=data_type,
+        fold=fold,
         **config["dataset"]["train"]["params"],
     )
 
@@ -281,7 +286,7 @@ if __name__ == "__main__":
 
 
     with open(
-        os.path.join(train_data_path, data_type, "Flods", config["dataset"]["test"]["params"]['test_flod']), "r"
+        os.path.join(train_data_path, data_type, "Flods", f"test{fold}.list"), "r"
     ) as f:  # todo change test flod
         image_list = f.readlines()
     if data_type=="Pancreas":
