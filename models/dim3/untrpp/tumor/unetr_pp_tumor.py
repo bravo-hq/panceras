@@ -110,7 +110,7 @@ class UNETR_PP(SegmentationNetwork):
             kernel_size=3,
             upsample_kernel_size=(4, 4, 4),
             norm_name=norm_name,
-            out_size=128 * 128 * 128,
+            out_size=96 * 96 * 96,
             conv_decoder=True,
         )
         self.out1 = UnetOutBlock(
