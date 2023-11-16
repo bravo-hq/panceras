@@ -14,7 +14,7 @@ einops, _ = optional_import("einops")
 class UnetrPPEncoder(nn.Module):
     def __init__(
         self,
-        input_size=[32 * 32 * 32, 16 * 16 * 16, 8 * 8 * 8, 4 * 4 * 4],
+        input_size=[110592, 13824,1728,216],
         dims=[32, 64, 128, 256],
         proj_size=[64, 64, 64, 32],
         depths=[3, 3, 3, 3],
