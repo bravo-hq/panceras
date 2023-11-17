@@ -1,5 +1,5 @@
 datatype: 'Pancreas'
-max_iterations: 10000
+max_iterations: 6000
 # snapshot_path: "E:/pancreas/output/"
 snapshot_path: "/cabinet/yousef/pancreas/outputs/"
 test_every_epochs: 20

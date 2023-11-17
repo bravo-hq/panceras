@@ -1,5 +1,5 @@
 datatype: 'LA'
-max_iterations: 10000
+max_iterations: 6000
 # snapshot_path: "E:/Left Atrial/output/"
 snapshot_path: "/cabinet/yousef/LA/outputs/"
 test_every_epochs: 20
