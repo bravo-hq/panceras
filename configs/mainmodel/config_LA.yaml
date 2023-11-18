@@ -27,7 +27,7 @@ training:
   optimizer:
     name: 'SGD'
     params:
-      lr: 0.05
+      lr: 0.01
       momentum: 0.9
       weight_decay: 0.0001
   scheduler:
@@ -38,7 +38,7 @@ training:
         mode: 'min'
   epochs: 300
 model: 
-  name: 'MainModel_SGD_LA'
+  name: 'MainModel_SGD_LA_lr_0.01'
   params:
     spatial_shapes: [96, 96, 96]
     in_channels: 1
