@@ -1,5 +1,5 @@
 datatype: 'LA'
-max_iterations: 6000
+max_iterations: 10000
 # snapshot_path: "E:/Left Atrial/output/"
 snapshot_path: "/cabinet/yousef/LA/outputs/"
 test_every_epochs: 20
@@ -38,11 +38,13 @@ training:
         mode: 'min'
   epochs: 300
 model: 
-  name: 'DLKA-Former_SGD_LA'
+  name: 'nnFormer_SGD_LA'
   params:
-    in_channels: 1
-    out_channels: 2
-    img_size: [96, 96, 96]
-    patch_size: [2,2,2]
-    input_size: [110592, 13824,1728,216]
-    do_ds: False
+    crop_size: [96,96,96]
+    input_channels: 1
+    num_classes: 2
+    deep_supervision: false
+    patch_size: [4,4,4]
+    window_size: [4,4,8,4]
+    num_heads: [3, 6, 12, 24]
+    embedding_dim: 96

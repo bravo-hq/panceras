@@ -18,11 +18,11 @@ dataset:
       test_flod: 'test0.list'
 data_loader:
   train: 
-    batch_size: 3
+    batch_size: 1
     shuffle: true
-    num_workers: 0
+    num_workers: 14
     pin_memory: true
-    # persistent_workers: true
+    persistent_workers: true
 training:
   optimizer:
     name: 'SGD'

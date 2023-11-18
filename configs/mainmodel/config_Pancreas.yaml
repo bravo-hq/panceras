@@ -20,14 +20,14 @@ data_loader:
   train: 
     batch_size: 3
     shuffle: true
-    num_workers: 0
+    num_workers: 14
     pin_memory: true
-    # persistent_workers: true
+    persistent_workers: true
 training:
   optimizer:
     name: 'SGD'
     params:
-      lr: 0.05
+      lr: 0.01
       momentum: 0.9
       weight_decay: 0.0001
   scheduler:
@@ -38,7 +38,7 @@ training:
         mode: 'min'
   epochs: 300
 model: 
-  name: 'MainModel_SGD_PANCREAS'
+  name: 'MainModel_SGD_PANCREAS_lr_0.01'
   params:
     # in_channels: 4
     # out_channels: 3

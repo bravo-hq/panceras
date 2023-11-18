@@ -1,19 +1,19 @@
-datatype: 'LA'
-max_iterations: 6000
-# snapshot_path: "E:/Left Atrial/output/"
-snapshot_path: "/cabinet/yousef/LA/outputs/"
+datatype: 'Pancreas'
+max_iterations: 10000
+# snapshot_path: "E:/pancreas/output/"
+snapshot_path: "/cabinet/yousef/pancreas/outputs/"
 test_every_epochs: 20
 dataset:
   train:
     params:
-      # base_dir: "E:/Left Atrial/Left Atrial"
-      base_dir: "/cabinet/dataset/Left Atrial"
+      # base_dir: "E:/pancreas/pancreas"
+      base_dir: "/cabinet/dataset/pancreas"
       split: 'train'
       train_flod: 'train0.list'
   test:
     params:
-      # base_dir: "E:/Left Atrial/Left Atrial"
-      base_dir: "/cabinet/dataset/Left Atrial"
+      # base_dir: "E:/pancreas/pancreas"
+      base_dir: "/cabinet/dataset/pancreas"
       split: 'test'
       test_flod: 'test0.list'
 data_loader:
@@ -38,11 +38,13 @@ training:
         mode: 'min'
   epochs: 300
 model: 
-  name: 'DLKA-Former_SGD_LA'
+  name: 'nnFormer_SGD_PANCREAS'
   params:
-    in_channels: 1
-    out_channels: 2
-    img_size: [96, 96, 96]
-    patch_size: [2,2,2]
-    input_size: [110592, 13824,1728,216]
-    do_ds: False
+    crop_size: [96,96,96]
+    input_channels: 1
+    num_classes: 2
+    deep_supervision: false
+    patch_size: [4,4,4]
+    window_size: [4,4,8,4]
+    num_heads: [3, 6, 12, 24]
+    embedding_dim: 96
