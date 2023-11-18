@@ -38,7 +38,7 @@ training:
         mode: 'min'
   epochs: 300
 model: 
-  name: 'nnFormer_SGD_LA'
+  name: 'nnFormer3d_SGD_LA'
   params:
     crop_size: [96,96,96]
     input_channels: 1
