@@ -459,7 +459,7 @@ class Model(nn.Module):
             cnn_kernel_sizes=hyb_kernel_sizes,
             cnn_strides=hyb_strides,
             cnn_maxpools=hyb_maxpools,
-            deforms=hyb_deforms,
+            cnn_deforms=hyb_deforms,
             cnn_dropouts=hyb_cnn_dropouts,
             tf_input_sizes=enc_hyb_tf_input_sizes,
             tf_proj_sizes=hyb_tf_proj_sizes,
