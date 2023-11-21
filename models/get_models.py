@@ -16,7 +16,8 @@ from models.dim3.untrpp.tumor.unetr_pp_tumor import UNETR_PP as UNETRPP
 import platform
 
 if platform.system() == "Linux":
-    from models.dim3.main_model.models.dLKA import Model as MainModel
+    from models.dim3.main_model.models.dLKA import Model as MainModel_per
+    from models.dim3.main_model.models.main import Model as MainModel
 from monai.networks.nets import SwinUNETR, UNETR, SegResNetVAE
 from networks.d_lka_former.d_lka_net_synapse import D_LKA_Net
 from networks.d_lka_former.transformerblock import TransformerBlock_3D_single_deform_LKA, TransformerBlock

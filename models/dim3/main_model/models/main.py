@@ -72,9 +72,8 @@ class CNNBlock(BaseBlock):
         return x
 
 
-
 class CNNEncoder(nn.Module):
-    def __init__(self, in_channels, kernel_sizes, features, strides, maxpools, dropouts, deform_cnn=False) -> Any:
+    def __init__(self, in_channels, kernel_sizes, features, strides, maxpools, dropouts, deforms) -> Any:
         super().__init__()
         assert isinstance(kernel_sizes, list), "kernel_sizes must be a list"
         assert isinstance(features, list), "features must be a list"
@@ -89,13 +88,13 @@ class CNNEncoder(nn.Module):
         
         self.encoder_blocks = nn.ModuleList()
         
-        for (ich, och), ks, st, mp, do in zip(in_out_channles, kernel_sizes, strides, maxpools, dropouts):
+        for (ich, och), ks, st, mp, do, dfrm in zip(in_out_channles, kernel_sizes, strides, maxpools, dropouts, deforms):
             encoder = CNNBlock(
                 in_channels=ich,
                 out_channels=och,
                 kernel_size=ks,
                 stride=1 if mp else st,
-                deform_cnn=deform_cnn,
+                deform_cnn=dfrm,
                 dropout=do,
             )
             if mp:
@@ -110,10 +109,7 @@ class CNNEncoder(nn.Module):
             x = block(x)
             layer_features.append(x.clone())
         return x, layer_features
-    
-    
-    
-    
+ 
 
 class HybEncBlk(BaseBlock):
     def __init__(self, 
@@ -128,18 +124,20 @@ class HybEncBlk(BaseBlock):
                  tf_num_heads=4, 
                  tf_dropout=0.15,
                  deform_cnn=False,
+                 use_conv=True,
                  trans_block=TransformerBlock, **kwargs):
         super().__init__()
         self.deform_cnn = deform_cnn
         
-        if deform_cnn:
-            self.conv = nn.Sequential(    
-                DeformConvPack(in_channels, out_channels, kernel_size=kernel_size, stride=stride, padding=get_padding(kernel_size, stride)),
-                nn.BatchNorm3d(out_channels),
-                nn.PReLU()
-            )
-        else:
-            self.conv = UnetResBlock(3, in_channels, out_channels, kernel_size=kernel_size, stride=stride, norm_name="batch")
+        if use_conv:
+            if deform_cnn:
+                self.conv = nn.Sequential(    
+                    DeformConvPack(in_channels, out_channels, kernel_size=kernel_size, stride=stride, padding=get_padding(kernel_size, stride)),
+                    nn.BatchNorm3d(out_channels),
+                    nn.PReLU()
+                )
+            else:
+                self.conv = UnetResBlock(3, in_channels, out_channels, kernel_size=kernel_size, stride=stride, norm_name="batch")
         
         self.norm = get_norm_layer(name=("group", {"num_groups": in_channels}), channels=out_channels)
         self.stages = None
@@ -156,23 +154,21 @@ class HybEncBlk(BaseBlock):
         self.apply(self._init_weights)
 
     def forward(self, x):
-        if self.deform_cnn:
-            x = x.contiguous()
-        x = self.conv(x)
+        if hasattr(self, "conv"):
+            if self.deform_cnn:
+                x = x.contiguous()
+            x = self.conv(x)
         x = self.norm(x)
         if self.stages:
             x = self.stages(x)
         return x
-
-
-    
-    
-    
+  
 
 class HybridEncoder(nn.Module):
     def __init__(self, 
                  in_channels: int,
                  features: list[int],
+                 use_cnn: list[bool],
                  cnn_kernel_sizes: list[int|tuple],
                  cnn_strides: list[int|tuple],
                  cnn_maxpools: list[bool],
@@ -182,6 +178,7 @@ class HybridEncoder(nn.Module):
                  tf_repeats: list[int],
                  tf_num_heads: list[int],
                  tf_dropouts: list[float]|float,
+                 cnn_deforms: list[bool],
                  spatial_dims=3,
                  trans_block=TransformerBlock,
                  *args: Any, **kwds: Any) -> Any:
@@ -196,23 +193,24 @@ class HybridEncoder(nn.Module):
         
         self.encoder_blocks = nn.ModuleList()
         infos = zip(
-            io_channles, cnn_kernel_sizes, cnn_strides, cnn_maxpools, cnn_dropouts, 
+            io_channles, use_cnn, cnn_kernel_sizes, cnn_strides, cnn_maxpools, cnn_dropouts, cnn_deforms,
             tf_input_sizes, tf_proj_sizes, tf_repeats, tf_num_heads, tf_dropouts
         )
-        for (ich, och), cnnks, cnnst, cnnmp, cnndo, tfis, tfps, tfr, tfnh, tfdo in infos:            
+        for (ich, och), ucnn, cnnks, cnnst, cnnmp, cnndo, cnndfrm, tfis, tfps, tfr, tfnh, tfdo in infos:            
             block = HybEncBlk(
-                in_channels=ich, # 4,
-                out_channels=och, # 32,
-                # deform_cnn=True,
-                kernel_size=cnnks, # 5,
-                stride=cnnst, # 2,
-                dropout=cnndo, # 0.1,
+                in_channels=ich,    # 4,
+                out_channels=och,   # 32,
+                kernel_size=cnnks,  # 5,
+                stride=cnnst,       # 2,
+                dropout=cnndo,      # 0.1,
+                deform_cnn=cnndfrm, # False
                 tf_input_size=tfis, # ,
-                tf_proj_size=tfps, # ,
-                tf_repeats=tfr, # 3,
-                tf_num_heads=tfnh, # ,
-                tf_dropout=tfdo, # ,
-                trans_block=trans_block
+                tf_proj_size=tfps,  # ,
+                tf_repeats=tfr,     # 3,
+                tf_num_heads=tfnh,  # ,
+                tf_dropout=tfdo,    # ,
+                trans_block=trans_block,
+                use_conv=ucnn,
             )
             self.encoder_blocks.append(block)
             
@@ -224,6 +222,7 @@ class HybridEncoder(nn.Module):
         return x, layer_features
 
 
+
 class CNNDecoder(nn.Module):
     def __init__(self, 
                  in_channels, 
@@ -231,9 +230,9 @@ class CNNDecoder(nn.Module):
                  skip_channels,
                  cnn_kernel_sizes,
                  cnn_dropouts, 
+                 deforms,
                  tcv_kernel_sizes, 
                  tcv_strides,
-                 deform_cnn=False,
                  spatial_dims=3) -> Any:
         super().__init__()
         assert isinstance(cnn_kernel_sizes, list), "cnn_kernel_sizes must be a list"
@@ -249,8 +248,8 @@ class CNNDecoder(nn.Module):
 
         self.decoder_blocks = nn.ModuleList()
 
-        info = zip(in_out_channles, skip_channels, cnn_kernel_sizes, cnn_dropouts, tcv_kernel_sizes, tcv_strides)
-        for (ich, och), skch, cnnks, cnndo, tcvks, tcvst in info:
+        info = zip(in_out_channles, skip_channels, cnn_kernel_sizes, cnn_dropouts, deforms, tcv_kernel_sizes, tcv_strides)
+        for (ich, och), skch, cnnks, cnndo, cnndfrm, tcvks, tcvst in info:
             cnn_block = UnetResBlock
             decoder = DLKAFormer_DecoderBlock(
                 spatial_dims=spatial_dims,
@@ -262,16 +261,22 @@ class CNNDecoder(nn.Module):
                 cnn_dropout=cnndo,
                 tcv_kernel_size=tcvks,
                 tcv_stride=tcvst,
-                deform_cnn=deform_cnn,
+                deform_cnn=cnndfrm,
                 trans_block=None,
             )
             self.decoder_blocks.append(decoder)
 
-    def forward(self, x, skips: list):
+    def forward(self, x, skips: list, return_outs=False):
+        outs = []
         for block in self.decoder_blocks:
             skip = skips.pop()
             x = block(x, skip)
-        return x
+            if return_outs:
+                outs.append(x.clone())
+        if return_outs:
+            return x, outs
+        else:
+            return x
 
 
 class HybridDecoder(nn.Module):
@@ -280,8 +285,10 @@ class HybridDecoder(nn.Module):
                  in_channels: int,
                  features: list[int],
                  skip_channels: list[int],
+                 use_cnn: list[bool],
                  cnn_kernel_sizes: list[int|tuple],
                  cnn_dropouts: list[float]|float,
+                 cnn_deforms: list[bool],
                  tcv_strides: list[int|tuple],
                  tcv_kernel_sizes: list[int|tuple], 
                  tf_input_sizes: list[int],
@@ -303,11 +310,11 @@ class HybridDecoder(nn.Module):
         
         self.decoder_blocks = nn.ModuleList()
         infos = zip(
-            io_channles, skip_channels, cnn_kernel_sizes, cnn_dropouts, tcv_kernel_sizes, tcv_strides,
+            io_channles, skip_channels, use_cnn, cnn_kernel_sizes, cnn_dropouts, cnn_deforms, tcv_kernel_sizes, tcv_strides,
             tf_input_sizes, tf_proj_sizes, tf_repeats, tf_num_heads, tf_dropouts
         )
-        for (ich, och), skch, cnnks, cnndo, tcvks, tcvst, tfis, tfps, tfr, tfnh, tfdo in infos:            
-            cnn_block = UnetResBlock
+        for (ich, och), skch, ucnn, cnnks, cnndo, cnndfrm, tcvks, tcvst, tfis, tfps, tfr, tfnh, tfdo in infos:            
+            cnn_block = UnetResBlock if ucnn else None
             decoder = DLKAFormer_DecoderBlock(
                 spatial_dims=spatial_dims,
                 in_channels=ich,
@@ -316,6 +323,7 @@ class HybridDecoder(nn.Module):
                 cnn_block=cnn_block,
                 cnn_kernel_size=cnnks,
                 cnn_dropout=cnndo,
+                deform_cnn=cnndfrm,
                 tcv_kernel_size=tcvks,
                 tcv_stride=tcvst,
                 tf_input_size=tfis,
@@ -323,36 +331,55 @@ class HybridDecoder(nn.Module):
                 tf_repeats=tfr,
                 tf_num_heads=tfnh,
                 tf_dropout=tfdo,
-                trans_block=trans_block
+                trans_block=trans_block,
             )
             self.decoder_blocks.append(decoder)
             
-    def forward(self, x, skips=None):
+    def forward(self, x, skips=None, return_outs=False):
         first = True
+        outs = []
         for block in self.decoder_blocks:
             if first:
                 x = block(x)
                 first = False
             else:
                 x = block(x, skips.pop())
-        return x
+            if return_outs:
+                outs.append(x.clone())
+
+        if return_outs:
+            return x, outs
+        else:
+            return x
+
+
+
+class CNNContextBridge(nn.Module):
+    def __init__(self, ):
+        super().__init__()
+    
+    def forward(self, x, cnn_skips):
+        pass
+
+
 
 
 class Model(nn.Module):
-    def __init__(self, spatial_shapes, in_channels=4, out_channels=3,
+    def __init__(self, spatial_shapes, use_ds=False, in_channels=4, out_channels=3,
                  
                  # encoder params
-                 cnn_kernel_sizes=[5,3], cnn_features=[32,64], cnn_strides=[2,2], cnn_maxpools=[0,1], cnn_dropouts=0.1,
-                 hyb_kernel_sizes=[3,3,3], hyb_features=[128,256,512], hyb_strides=[2,2,2], hyb_maxpools=[0,0,0], hyb_cnn_dropouts=0.1, 
-                 hyb_tf_proj_sizes=[32, 64, 64], hyb_tf_repeats=[3,3,3], hyb_tf_num_heads=[4,4,4], hyb_tf_dropouts=0.15,
+                 cnn_kernel_sizes=[5,3], cnn_features=[32,64], cnn_strides=[2,2], cnn_maxpools=[0,1], cnn_dropouts=0.1, cnn_deforms=[True, True],
+                 hyb_use_cnn=[True, True], hyb_kernel_sizes=[3,3,3], hyb_features=[128,256,512], hyb_strides=[2,2,2], hyb_maxpools=[0,0,0], hyb_cnn_dropouts=0.1, 
+                 hyb_tf_proj_sizes=[32, 64, 64], hyb_tf_repeats=[3,3,3], hyb_tf_num_heads=[4,4,4], hyb_tf_dropouts=0.15, hyb_deforms=[False, False],
 
                  # decoder params
-                 dec_hyb_tcv_kernel_sizes=[5,5,5], dec_cnn_tcv_kernel_sizes=[5,5,5], 
-                 dec_hyb_kernel_sizes=None, dec_hyb_features=None, dec_hyb_cnn_dropouts=None, 
+                 dec_hyb_tcv_kernel_sizes=[5,5,5], dec_cnn_tcv_kernel_sizes=[5,5,5], dec_cnn_deforms=None,
+                 dec_hyb_use_cnn=None, dec_hyb_kernel_sizes=None, dec_hyb_features=None, dec_hyb_cnn_dropouts=None, 
                  dec_hyb_tf_proj_sizes=None, dec_hyb_tf_repeats=None, dec_hyb_tf_num_heads=None, dec_hyb_tf_dropouts=None,
-                 dec_cnn_kernel_sizes=None, dec_cnn_features=None, dec_cnn_dropouts=None,
+                 dec_cnn_kernel_sizes=None, dec_cnn_features=None, dec_cnn_dropouts=None, dec_hyb_deforms=None
     ):
         super().__init__()
+        self.use_ds = use_ds
         
         # ------------------------------------- Vars Prepration --------------------------------
         spatial_dims = len(spatial_shapes)
@@ -377,14 +404,18 @@ class Model(nn.Module):
         if not dec_hyb_features: dec_hyb_features = hyb_features[::-1][1:] + [enc_hyb_in_channels]
         if not dec_cnn_features: dec_cnn_features = cnn_features[::-1][1:] + [init_features]
         
+        if not dec_hyb_use_cnn      : dec_hyb_use_cnn = hyb_use_cnn[::-1]
         if not dec_hyb_kernel_sizes : dec_hyb_kernel_sizes = hyb_kernel_sizes[::-1]
         if not dec_hyb_cnn_dropouts : dec_hyb_cnn_dropouts = hyb_cnn_dropouts[::-1]
         if not dec_hyb_tf_proj_sizes: dec_hyb_tf_proj_sizes = hyb_tf_proj_sizes[::-1]
         if not dec_hyb_tf_repeats   : dec_hyb_tf_repeats = hyb_tf_repeats[::-1]
         if not dec_hyb_tf_num_heads : dec_hyb_tf_num_heads = hyb_tf_num_heads[::-1]
         if not dec_hyb_tf_dropouts  : dec_hyb_tf_dropouts = hyb_tf_dropouts[::-1]
+        if not dec_hyb_deforms      : dec_hyb_deforms = cnn_deforms[::-1]
         if not dec_cnn_kernel_sizes : dec_cnn_kernel_sizes = cnn_kernel_sizes[::-1]
         if not dec_cnn_dropouts     : dec_cnn_dropouts = cnn_dropouts[::-1]
+        if not dec_cnn_deforms      : dec_cnn_deforms = cnn_deforms[::-1]
+        
 
         # calculate spatial_shapes in encoder and decoder diferent layers
         enc_spatial_shaps = [spatial_shapes]
@@ -418,16 +449,17 @@ class Model(nn.Module):
             strides=cnn_strides,
             maxpools=cnn_maxpools,
             dropouts=cnn_dropouts,
-            deform_cnn=True,
+            deforms=cnn_deforms,
         )
         
         self.hyb_encoder = HybridEncoder(
             in_channels=cnn_features[-1],
             features=hyb_features,
+            use_cnn=hyb_use_cnn,
             cnn_kernel_sizes=hyb_kernel_sizes,
             cnn_strides=hyb_strides,
             cnn_maxpools=hyb_maxpools,
-            # deform_cnn=True,
+            deforms=hyb_deforms,
             cnn_dropouts=hyb_cnn_dropouts,
             tf_input_sizes=enc_hyb_tf_input_sizes,
             tf_proj_sizes=hyb_tf_proj_sizes,
@@ -439,12 +471,15 @@ class Model(nn.Module):
         
         # ------------------------------------- Decoder --------------------------------
         self.hyb_decoder = HybridDecoder(
+            # return_outs=self.use_ds,
             spatial_dims=spatial_dims,
             in_channels=enc_hyb_out_channels,
             features=dec_hyb_features,
             skip_channels=dec_hyb_skip_channels,
+            use_cnn=dec_hyb_use_cnn,
             cnn_kernel_sizes=dec_hyb_kernel_sizes,
             cnn_dropouts=dec_cnn_dropouts,
+            cnn_deforms=dec_hyb_deforms,
             tcv_kernel_sizes=dec_hyb_tcv_kernel_sizes,
             tcv_strides=hyb_strides[::-1],
             tf_input_sizes=dec_hyb_tf_input_sizes,
@@ -456,6 +491,7 @@ class Model(nn.Module):
         )
         
         self.cnn_decoder = CNNDecoder(
+            # return_outs=self.use_ds,
             spatial_dims=spatial_dims,
             in_channels=dec_hyb_features[-1],
             skip_channels=dec_cnn_skip_channels,
@@ -464,7 +500,7 @@ class Model(nn.Module):
             features=dec_cnn_features,
             tcv_kernel_sizes=dec_cnn_tcv_kernel_sizes,
             tcv_strides=cnn_strides[::-1],
-            # deform_cnn=True
+            deforms=dec_cnn_deforms,
         )
         
         self.out = UnetOutBlock(
@@ -473,6 +509,11 @@ class Model(nn.Module):
             out_channels=out_channels,
             dropout=0
         )
+        
+        # self.cnn_context_bridge = CNNContextBridge(
+        #     ...
+        # )
+
 
     def forward(self, x):
         x = self.init(x)
@@ -483,12 +524,21 @@ class Model(nn.Module):
         x, hyb_skips = self.hyb_encoder(x)
         # print(f"after x, hyb_skips = self.hyb_encoder(x) | x:{x.shape}")
 
-        x = self.hyb_decoder(x, hyb_skips[:-1])
-        # print(f"after x = self.hyb_decoder(x, hyb_skips) | x:{x.shape}")
-        x = self.cnn_decoder(x, cnn_skips)
-        # print(f"after x = self.cnn_decoder(x, cnn_skips) | x:{x.shape}")
+        if self.use_ds:
+            x, hyb_outs = self.hyb_decoder(x, hyb_skips[:-1], return_outs=True)
+            x, cnn_outs = self.cnn_decoder(x, cnn_skips, return_outs=True)
+            
+        else:
+            x = self.hyb_decoder(x, hyb_skips[:-1])
+            # print(f"after x = self.hyb_decoder(x, hyb_skips) | x:{x.shape}")
+            # x, cnn_skips = self.cnn_context_bridge(x, cnn_skips)
+            x = self.cnn_decoder(x, cnn_skips)
+            # print(f"after x = self.cnn_decoder(x, cnn_skips) | x:{x.shape}")
 
         x = torch.concatenate([x, r], dim=1)
         x = self.out(x)
-        return x
         
+        if self.use_ds:
+            return x, hyb_outs+cnn_outs
+        
+        return x
