@@ -411,7 +411,7 @@ class Model(nn.Module):
         if not dec_hyb_tf_repeats   : dec_hyb_tf_repeats = hyb_tf_repeats[::-1]
         if not dec_hyb_tf_num_heads : dec_hyb_tf_num_heads = hyb_tf_num_heads[::-1]
         if not dec_hyb_tf_dropouts  : dec_hyb_tf_dropouts = hyb_tf_dropouts[::-1]
-        if not dec_hyb_deforms      : dec_hyb_deforms = cnn_deforms[::-1]
+        if not dec_hyb_deforms      : dec_hyb_deforms = hyb_deforms[::-1]
         if not dec_cnn_kernel_sizes : dec_cnn_kernel_sizes = cnn_kernel_sizes[::-1]
         if not dec_cnn_dropouts     : dec_cnn_dropouts = cnn_dropouts[::-1]
         if not dec_cnn_deforms      : dec_cnn_deforms = cnn_deforms[::-1]
