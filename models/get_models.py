@@ -110,6 +110,10 @@ def get_unetrpp(config):
 def d_lka_net_synapse(config):
     return D_LKA_Net(trans_block=TransformerBlock_3D_single_deform_LKA, **config["model"]["params"])
 
+def get_vnet(config):
+    from networks.vnet import VNet
+    return VNet(**config["model"]["params"])
+
 
 MODEL_FACTORY = {
     "unet": get_unet,
@@ -133,6 +137,7 @@ MODEL_FACTORY = {
     "nnformer3d": get_nnformer,
     "unetrpp3d": get_unetrpp,
     "dlka-former": d_lka_net_synapse,
+    "vnet": get_vnet,
 }
 
 

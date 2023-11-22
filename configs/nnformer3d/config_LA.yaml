@@ -18,7 +18,7 @@ dataset:
       test_flod: 'test0.list'
 data_loader:
   train: 
-    batch_size: 1
+    batch_size: 2
     shuffle: true
     num_workers: 14
     pin_memory: true
@@ -38,7 +38,7 @@ training:
         mode: 'min'
   epochs: 300
 model: 
-  name: 'nnFormer3d_SGD_LA'
+  name: 'nnFormer3d_SGD_LA_batch_2'
   params:
     crop_size: [96,96,96]
     input_channels: 1
