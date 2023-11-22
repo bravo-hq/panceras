@@ -365,7 +365,7 @@ class CNNContextBridge(nn.Module):
 
 
 class Model(nn.Module):
-    def __init__(self, spatial_shapes, use_ds=False, in_channels=4, out_channels=3,
+    def __init__(self, spatial_shapes, do_ds=False, in_channels=4, out_channels=3,
                  
                  # encoder params
                  cnn_kernel_sizes=[5,3], cnn_features=[32,64], cnn_strides=[2,2], cnn_maxpools=[0,1], cnn_dropouts=0.1, cnn_deforms=[True, True],
@@ -379,7 +379,7 @@ class Model(nn.Module):
                  dec_cnn_kernel_sizes=None, dec_cnn_features=None, dec_cnn_dropouts=None, dec_hyb_deforms=None
     ):
         super().__init__()
-        self.use_ds = use_ds
+        self.do_ds = do_ds
         
         # ------------------------------------- Vars Prepration --------------------------------
         spatial_dims = len(spatial_shapes)
@@ -513,6 +513,8 @@ class Model(nn.Module):
         # self.cnn_context_bridge = CNNContextBridge(
         #     ...
         # )
+        
+        self.num_classes = out_channels
 
 
     def forward(self, x):
@@ -524,7 +526,7 @@ class Model(nn.Module):
         x, hyb_skips = self.hyb_encoder(x)
         # print(f"after x, hyb_skips = self.hyb_encoder(x) | x:{x.shape}")
 
-        if self.use_ds:
+        if self.do_ds:
             x, hyb_outs = self.hyb_decoder(x, hyb_skips[:-1], return_outs=True)
             x, cnn_outs = self.cnn_decoder(x, cnn_skips, return_outs=True)
             
@@ -538,7 +540,7 @@ class Model(nn.Module):
         x = torch.concatenate([x, r], dim=1)
         x = self.out(x)
         
-        if self.use_ds:
+        if self.do_ds:
             return x, hyb_outs+cnn_outs
         
         return x
