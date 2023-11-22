@@ -82,12 +82,12 @@ args = parser.parse_args()
 
 def create_snapshot_directory(base_path, base_name,config):
     dir_number = 0
-    dir_path = os.path.join(base_path,config["model"]["name"].lower().split("_")[0],f"{config['model']['name']}_fold{args.fold}", f"{base_name}{dir_number}/")
+    dir_path = os.path.join(base_path,config["model"]["name"].split("_")[0],f"{config['model']['name']}_fold{args.fold}", f"{base_name}{dir_number}/")
 
     # Check if the directory exists and increment the number if it does
     while os.path.exists(dir_path):
         dir_number += 1
-        dir_path = os.path.join(base_path,config["model"]["name"].lower().split("_")[0],f"{config['model']['name']}_fold{args.fold}", f"{base_name}{dir_number}/")
+        dir_path = os.path.join(base_path,config["model"]["name"].split("_")[0],f"{config['model']['name']}_fold{args.fold}", f"{base_name}{dir_number}/")
 
     # Create the directory
     os.makedirs(dir_path)
