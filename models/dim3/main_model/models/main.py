@@ -667,7 +667,7 @@ class MSLKA3AttentionModule(nn.Module):
 
 
 class BridgeModule(nn.Module):
-    def __init__(self, feats:list[int], c_attn_block:nn.Module, s_attn_block:nn.Module):
+    def __init__(self, feats:list[int], c_attn_block:nn.Module, s_attn_block:nn.Module, mlk_attn_block:nn.Module):
         super().__init__()
         ifeats = feats[::-1]
         self.act = nn.GELU()
@@ -678,7 +678,7 @@ class BridgeModule(nn.Module):
         for feat in ifeats:
             self.c_atts.append(c_attn_block(feat))
             self.s_atts.append(s_attn_block(feat))
-            self.ms_lkas.append(MSLKA(feat))
+            self.ms_lkas.append(mlk_attn_block(feat))
             self.norms.append(nn.BatchNorm3d(feat))
             
         self.ups = nn.ModuleList()
@@ -879,7 +879,8 @@ class Model_Bridge(nn.Module):
         self.bridge = BridgeModule(
             feats=(cnn_features+hyb_features)[:-1],
             c_attn_block=GateChannelAttentionModule,
-            s_attn_block=partial(SKAttentionModule, groups=8)
+            s_attn_block=partial(SKAttentionModule, groups=8),
+            mlk_attn_block=MSLKA3AttentionModule
         )
         
         self.num_classes = out_channels
