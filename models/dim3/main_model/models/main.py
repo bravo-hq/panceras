@@ -670,7 +670,7 @@ class MSLKA3AttentionModule(nn.Module):
 
 
 class BridgeModule(nn.Module):
-    def __init__(self, feats:list[int], c_attn_block:nn.Module, s_attn_block:nn.Module, mlk_attn_block:nn.Module):
+    def __init__(self, feats:list[int], c_attn_block:nn.Module=nn.Identity, s_attn_block:nn.Module=nn.Identity, mlk_attn_block:nn.Module=nn.Identity):
         super().__init__()
         ifeats = feats[::-1]
         self.act = nn.GELU()
