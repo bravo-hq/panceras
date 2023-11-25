@@ -599,11 +599,11 @@ class SKAttentionModule(nn.Module):
             nn.LeakyReLU()
         )
         self.avgpool = nn.AdaptiveAvgPool3d(1)
-        self.fc = nn.Sequential(
-            nn.Linear(planes, d),
-            nn.BatchNorm1d(d),
-            nn.LeakyReLU()
-        )
+        
+        self.fc = nn.Linear(planes, d)
+        self.fc_norm = nn.BatchNorm1d(d)
+        self.fc_act = nn.LeakyReLU()
+        
         self.fc1 = nn.Linear(d, planes)
         self.fc2 = nn.Linear(d, planes)
 
@@ -613,7 +613,10 @@ class SKAttentionModule(nn.Module):
         u2 = self.split_5x5x5(x)
         u = u1 + u2
         s = self.avgpool(u).flatten(1)
+        
         z = self.fc(s)
+        z = self.fc_act(z if z.shape[0] == 1 else self.fc_norm(z))
+        
         attn_scores = torch.cat([self.fc1(z), self.fc2(z)], dim=1)
         attn_scores = attn_scores.view(batch_size, 2, self.planes)
         attn_scores = attn_scores.softmax(dim=1)
