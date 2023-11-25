@@ -896,7 +896,7 @@ class Model_Bridge(nn.Module):
         # print(f"after x, hyb_skips = self.hyb_encoder(x) | x:{x.shape}")
         
         upper_skips = cnn_skips+hyb_skips[:-1]
-        _upper_skips = self.bridge(upper_skips)
+        _upper_skips = self.bridge(*upper_skips)
         cnn_skips = _upper_skips[:len(cnn_skips)]
         hyb_skips[:-1] = _upper_skips[len(cnn_skips):]
 
