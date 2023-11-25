@@ -466,7 +466,8 @@ class Model(nn.Module):
             tf_repeats=hyb_tf_repeats,
             tf_num_heads=hyb_tf_num_heads,
             tf_dropouts=hyb_tf_dropouts,
-            trans_block=TransformerBlock_Deform_LKA_Channel
+            # trans_block=TransformerBlock_Deform_LKA_Channel
+            trans_block=TransformerBlock_3D_single_deform_LKA,
         )
         
         # ------------------------------------- Decoder --------------------------------
@@ -487,7 +488,8 @@ class Model(nn.Module):
             tf_repeats=hyb_tf_repeats,
             tf_num_heads=hyb_tf_num_heads,
             tf_dropouts=hyb_tf_dropouts,
-            trans_block=TransformerBlock_Deform_LKA_Channel
+            # trans_block=TransformerBlock_Deform_LKA_Channel
+            trans_block=TransformerBlock_3D_single_deform_LKA,
         )
         
         self.cnn_decoder = CNNDecoder(
