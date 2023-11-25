@@ -17,7 +17,8 @@ import platform
 
 if platform.system() == "Linux":
     from models.dim3.main_model.models.dLKA import Model as MainModel_per
-    from models.dim3.main_model.models.main import Model as MainModel
+    from models.dim3.main_model.models.main import Model_Base as MainModel
+    from models.dim3.main_model.models.main import Model_Bridge as MainModel_bridge
 from monai.networks.nets import SwinUNETR, UNETR, SegResNetVAE
 from networks.d_lka_former.d_lka_net_synapse import D_LKA_Net
 from networks.d_lka_former.transformerblock import TransformerBlock_3D_single_deform_LKA, TransformerBlock
@@ -87,6 +88,9 @@ def get_transunet3d(config):
 def get_main_model(config):
     return MainModel(**config["model"]["params"])
 
+def get_main_model_bridge(config):
+    return MainModel_bridge(**config["model"]["params"])
+
 
 def get_swinunetr(config):
     return SwinUNETR(**config["model"]["params"])
@@ -127,6 +131,7 @@ MODEL_FACTORY = {
     "resunet3d": get_resunet3d,
     "resunetse3d": get_resunetse3d,
     "mainmodel": get_main_model,
+    "mainmodel-bridge": get_main_model_bridge,
     "transunet3d": get_transunet3d,
     "swinunetr": get_swinunetr,
     "swinunetr3d": get_swinunetr,
