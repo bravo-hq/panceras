@@ -18,7 +18,7 @@ class LAHeart(Dataset):
         train_flod=None,
         common_transform=None,
         sp_transform=None,
-        data_type='LA',
+        data_type="LA",
         fold=0,
     ):
         self._base_dir = base_dir
@@ -28,7 +28,8 @@ class LAHeart(Dataset):
         print(f"train{fold}.list")
         if split == "train":
             with open(
-                os.path.join(self._base_dir, data_type, "Flods", f"train{fold}.list"), "r"
+                os.path.join(self._base_dir, data_type, "Flods", f"train{fold}.list"),
+                "r",
             ) as f:  # /LA/Flods/
                 self.image_list = f.readlines()
         self.image_list = [item.replace("\n", "") for item in self.image_list]
@@ -46,10 +47,10 @@ class LAHeart(Dataset):
         if self.data_type == "Pancreas":
             file_path = os.path.join(self._base_dir, image_name)
         else:
-            file_path = os.path.join(self._base_dir, image_name, 'mri_norm2.h5')
+            file_path = os.path.join(self._base_dir, image_name, "mri_norm2.h5")
 
         # Open the file using h5py
-        h5f = h5py.File(file_path, "r") # +"/mri_norm2.h5", 'r')
+        h5f = h5py.File(file_path, "r")  # +"/mri_norm2.h5", 'r')
         image = h5f["image"][:]
         label = h5f["label"][:]
         sample = {"image": image, "label": label}

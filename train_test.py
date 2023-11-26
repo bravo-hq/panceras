@@ -80,14 +80,24 @@ parser.add_argument(
 args = parser.parse_args()
 
 
-def create_snapshot_directory(base_path, base_name,config):
+def create_snapshot_directory(base_path, base_name, config):
     dir_number = 0
-    dir_path = os.path.join(base_path,config["model"]["name"].split("_")[0],f"{config['model']['name']}_fold{args.fold}", f"{base_name}{dir_number}/")
+    dir_path = os.path.join(
+        base_path,
+        config["model"]["name"].split("_")[0],
+        f"{config['model']['name']}_fold{args.fold}",
+        f"{base_name}{dir_number}/",
+    )
 
     # Check if the directory exists and increment the number if it does
     while os.path.exists(dir_path):
         dir_number += 1
-        dir_path = os.path.join(base_path,config["model"]["name"].split("_")[0],f"{config['model']['name']}_fold{args.fold}", f"{base_name}{dir_number}/")
+        dir_path = os.path.join(
+            base_path,
+            config["model"]["name"].split("_")[0],
+            f"{config['model']['name']}_fold{args.fold}",
+            f"{base_name}{dir_number}/",
+        )
 
     # Create the directory
     os.makedirs(dir_path)
@@ -103,7 +113,9 @@ def create_snapshot_directory(base_path, base_name,config):
 # base_lr = args.base_lr
 # labeled_bs = args.labeled_bs
 
-config_path=os.path.join(os.getcwd(),"configs",args.model, f"config_{args.datatype}.yaml")
+config_path = os.path.join(
+    os.getcwd(), "configs", args.model, f"config_{args.datatype}.yaml"
+)
 config = load_config(config_path)
 print_config(config)
 train_data_path = config["dataset"]["train"]["params"]["base_dir"]
@@ -112,9 +124,9 @@ labeled_bs = batch_size
 max_iterations = config["max_iterations"]
 base_lr = config["training"]["optimizer"]["params"]["lr"]
 snapshot_path = config["snapshot_path"]
-snapshot_path = create_snapshot_directory(snapshot_path, 'version_', config)
+snapshot_path = create_snapshot_directory(snapshot_path, "version_", config)
 test_every_epochs = config["test_every_epochs"]
-data_type = config['datatype']
+data_type = config["datatype"]
 fold = args.fold
 
 if args.deterministic:
@@ -126,7 +138,7 @@ if args.deterministic:
     torch.cuda.manual_seed(args.seed)
 
 num_classes = 2
-if data_type=="Pancreas":
+if data_type == "Pancreas":
     patch_size = (96, 96, 96)  # 96x96x96 for Pancreas
 else:
     patch_size = (96, 96, 96)
@@ -165,31 +177,35 @@ def gateher_two_patch(vec):
     result = torch.cat(cat_result, dim=1)
     return result
 
+
 def log_test_outputs(avg_metrics, logits, labels, writer, iter_num=0):
-        writer.add_scalar("test/Dice_metric", avg_metrics[0], iter_num)
-        writer.add_scalar("test/Jaccard_metric", avg_metrics[1], iter_num)
-        writer.add_scalar("test/HD_metric", avg_metrics[2], iter_num)
-        writer.add_scalar("test/ASD_metric", avg_metrics[3], iter_num)
-        total_loss = []
-        total_loss_seg = []
-        total_loss_seg_dice = []    
-        for logit,label in zip(logits,labels):
-            ## calculate the supervised loss
-            logit=torch.as_tensor(logit).unsqueeze(0).float()
-            label=torch.as_tensor(label).unsqueeze(0).long()
-            lka_loss_seg = F.cross_entropy(
-                logit, label
-            )
-            lka_outputs_soft = F.softmax(logit, dim=1)
-            lka_loss_seg_dice = losses.dice_loss(
-                lka_outputs_soft[:, 1, :, :, :], label[:] == 1
-            )
-            total_loss.append(lka_loss_seg + lka_loss_seg_dice)
-            total_loss_seg.append(lka_loss_seg)
-            total_loss_seg_dice.append(lka_loss_seg_dice)
-        writer.add_scalar("test_loss/total_loss", torch.stack(total_loss).mean(), iter_num)
-        writer.add_scalar("test_loss/lka_loss_seg", torch.stack(total_loss_seg).mean(), iter_num)
-        writer.add_scalar("test_loss/lka_loss_seg_dice", torch.stack(total_loss_seg_dice).mean(), iter_num)   
+    writer.add_scalar("test/Dice_metric", avg_metrics[0], iter_num)
+    writer.add_scalar("test/Jaccard_metric", avg_metrics[1], iter_num)
+    writer.add_scalar("test/HD_metric", avg_metrics[2], iter_num)
+    writer.add_scalar("test/ASD_metric", avg_metrics[3], iter_num)
+    total_loss = []
+    total_loss_seg = []
+    total_loss_seg_dice = []
+    for logit, label in zip(logits, labels):
+        ## calculate the supervised loss
+        logit = torch.as_tensor(logit).unsqueeze(0).float()
+        label = torch.as_tensor(label).unsqueeze(0).long()
+        lka_loss_seg = F.cross_entropy(logit, label)
+        lka_outputs_soft = F.softmax(logit, dim=1)
+        lka_loss_seg_dice = losses.dice_loss(
+            lka_outputs_soft[:, 1, :, :, :], label[:] == 1
+        )
+        total_loss.append(lka_loss_seg + lka_loss_seg_dice)
+        total_loss_seg.append(lka_loss_seg)
+        total_loss_seg_dice.append(lka_loss_seg_dice)
+    writer.add_scalar("test_loss/total_loss", torch.stack(total_loss).mean(), iter_num)
+    writer.add_scalar(
+        "test_loss/lka_loss_seg", torch.stack(total_loss_seg).mean(), iter_num
+    )
+    writer.add_scalar(
+        "test_loss/lka_loss_seg_dice", torch.stack(total_loss_seg_dice).mean(), iter_num
+    )
+
 
 if __name__ == "__main__":
     ## make logger file
@@ -250,7 +266,9 @@ if __name__ == "__main__":
 
     summary(
         model_d_lka_former,
-        input_size=[batch_size, 1, 96, 96, 96] if data_type=="Pancreas" else [batch_size, 1, 96, 96, 96],
+        input_size=[batch_size, 1, 96, 96, 96]
+        if data_type == "Pancreas"
+        else [batch_size, 1, 96, 96, 96],
         col_names=["input_size", "output_size", "num_params", "mult_adds", "trainable"],
         mode="train",
     )
@@ -284,20 +302,20 @@ if __name__ == "__main__":
     max_epoch = max_iterations // len(trainloader) + 1
     lr_ = base_lr
 
-
     with open(
         os.path.join(train_data_path, data_type, "Flods", f"test{fold}.list"), "r"
     ) as f:  # todo change test flod
         image_list = f.readlines()
-    if data_type=="Pancreas":
+    if data_type == "Pancreas":
         image_list = [
             os.path.join(train_data_path, item.replace("\n", "")) for item in image_list
         ]
     else:
         image_list = [
-            os.path.join(train_data_path, item.replace("\n", ""),  'mri_norm2.h5') for item in image_list
+            os.path.join(train_data_path, item.replace("\n", ""), "mri_norm2.h5")
+            for item in image_list
         ]
-    
+
     with open(os.path.join(snapshot_path, "hpram.yaml"), "w") as yaml_file:
         yaml.dump(config, yaml_file)
 
@@ -317,7 +335,7 @@ if __name__ == "__main__":
             )
             # Transfer to GPU
             lka_input, lka_label = volume_batch1.cuda(), volume_label1.cuda()
-            
+
             # Network forward
             lka_outputs = model_d_lka_former(lka_input)
 
@@ -339,7 +357,9 @@ if __name__ == "__main__":
             writer.add_scalar("lr", lr_, iter_num)
             writer.add_scalar("train_loss/total_loss", loss_total, iter_num)
             writer.add_scalar("train_loss/lka_loss_seg", lka_loss_seg, iter_num)
-            writer.add_scalar("train_loss/lka_loss_seg_dice", lka_loss_seg_dice, iter_num)
+            writer.add_scalar(
+                "train_loss/lka_loss_seg_dice", lka_loss_seg_dice, iter_num
+            )
 
             if iter_num % 50 == 0 and iter_num != 0:
                 logging.info(
@@ -386,7 +406,12 @@ if __name__ == "__main__":
             )
             os.makedirs(test_save_path, exist_ok=True)
             avg_metrics, logits, labels = test_calculate_metric(
-                epoch_num, model_d_lka_former, snapshot_path, test_save_path, image_list, data_type
+                epoch_num,
+                model_d_lka_former,
+                snapshot_path,
+                test_save_path,
+                image_list,
+                data_type,
             )
             log_test_outputs(avg_metrics, logits, labels, writer, iter_num=iter_num)
 
@@ -409,7 +434,12 @@ if __name__ == "__main__":
     )
     os.makedirs(test_save_path, exist_ok=True)
     metric, logits, labels = test_calculate_metric(
-        max_iterations, model_d_lka_former, snapshot_path, test_save_path, image_list, data_type
+        max_iterations,
+        model_d_lka_former,
+        snapshot_path,
+        test_save_path,
+        image_list,
+        data_type,
     )
     log_test_outputs(metric, logits, labels, writer, iter_num=max_iterations)
     print("iter:", max_iterations)

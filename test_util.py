@@ -141,10 +141,10 @@ def test_single_case(
                     y1 = vnet(test_patch)
                     logits_cpu = y1.cpu().detach().numpy()
                     logits_map[
-                    :,
-                    xs : xs + patch_size[0],
-                    ys : ys + patch_size[1],
-                    zs : zs + patch_size[2],
+                        :,
+                        xs : xs + patch_size[0],
+                        ys : ys + patch_size[1],
+                        zs : zs + patch_size[2],
                     ] += logits_cpu[0, :, :, :, :]
                     y = F.softmax(y1, dim=1)
                     y = y.cpu().detach().data.numpy()

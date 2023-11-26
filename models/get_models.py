@@ -21,7 +21,10 @@ if platform.system() == "Linux":
     from models.dim3.main_model.models.main import Model_Bridge as MainModel_bridge
 from monai.networks.nets import SwinUNETR, UNETR, SegResNetVAE
 from networks.d_lka_former.d_lka_net_synapse import D_LKA_Net
-from networks.d_lka_former.transformerblock import TransformerBlock_3D_single_deform_LKA, TransformerBlock
+from networks.d_lka_former.transformerblock import (
+    TransformerBlock_3D_single_deform_LKA,
+    TransformerBlock,
+)
 import torch
 
 
@@ -88,6 +91,7 @@ def get_transunet3d(config):
 def get_main_model(config):
     return MainModel(**config["model"]["params"])
 
+
 def get_main_model_bridge(config):
     return MainModel_bridge(**config["model"]["params"])
 
@@ -111,11 +115,16 @@ def get_nnformer(config):
 def get_unetrpp(config):
     return UNETRPP(**config["model"]["params"])
 
+
 def d_lka_net_synapse(config):
-    return D_LKA_Net(trans_block=TransformerBlock_3D_single_deform_LKA, **config["model"]["params"])
+    return D_LKA_Net(
+        trans_block=TransformerBlock_3D_single_deform_LKA, **config["model"]["params"]
+    )
+
 
 def get_vnet(config):
     from networks.vnet import VNet
+
     return VNet(**config["model"]["params"])
 
 

@@ -54,7 +54,7 @@ def test_calculate_metric(
     snapshot_path=None,
     test_save_path=None,
     image_list=None,
-    data_type="LA"
+    data_type="LA",
 ):
     #     dlka_former   = create_model(name='dlka_former')
     # dlka_former   = Model(
@@ -91,7 +91,7 @@ def test_calculate_metric(
     print("init weight from {}".format(lka_save_mode_path))
 
     n_parameters = sum(p.numel() for p in dlka_former.parameters() if p.requires_grad)
-    if data_type=="Pancreas":
+    if data_type == "Pancreas":
         input_res = (1, 96, 96, 96)
     else:
         input_res = (1, 96, 96, 96)
@@ -112,9 +112,9 @@ def test_calculate_metric(
         dlka_former,
         image_list,
         num_classes=2,
-        patch_size=(96, 96, 96) if data_type=="Pancreas" else (96, 96, 96),
-        stride_xy=16 if data_type=="Pancreas" else 18,
-        stride_z=16 if data_type=="Pancreas" else 4,
+        patch_size=(96, 96, 96) if data_type == "Pancreas" else (96, 96, 96),
+        stride_xy=16 if data_type == "Pancreas" else 18,
+        stride_z=16 if data_type == "Pancreas" else 4,
         save_result=True,
         test_save_path=test_save_path,
     )
