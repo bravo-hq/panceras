@@ -734,12 +734,13 @@ class BridgeModule(nn.Module):
         last_x = None
         outs = []
         for x, ca, sa, ma, norm in zip(skips[::-1], self.c_atts, self.s_atts, self.m_atts, self.norms):
+            _x=x.clone()
             if i>0:
                 x = x + self.ups[i-1](last_x)
 
-            c_att = ca(x) if self.use_c else 0
+            c_att = ca(_x) if self.use_c else 0
             s_att = sa(x) if self.use_c else 0
-            m_att = ma(x + self._aggregate(skips, x.shape)) if self.use_m else 0
+            m_att = ma(_x + self._aggregate(skips, x.shape)) if self.use_m else 0
             
             if self.use_weigths:
                 att = self.c_w[i]*c_att + self.s_w[i]*s_att + self.m_w[i]*m_att
