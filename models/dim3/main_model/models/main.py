@@ -914,7 +914,7 @@ class Model_Bridge(nn.Module):
         feats = cnn_features+hyb_features[:-1]
         self.bridge = BridgeModule(
             feats=[feats[i] for i in self.br_skip_levels],
-            c_attn_block=GateChannelAttentionModule if self.br_c_att_use else nn.Identity,
+            c_attn_block=GateChannelAttentionModule if self.br_c_attn_use else nn.Identity,
             s_attn_block=partial(SKAttentionModule, groups=8) if self.br_s_att_use else nn.Identity,
             m_attn_block=MultiScaleLKA3DModule if self.br_m_att_use else nn.Identity,
             use_weigths=self.br_use_p_ttn_w
