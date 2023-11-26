@@ -569,7 +569,6 @@ class PositionalAttentionModule(nn.Module):
         self.b = nn.Conv3d(dim, dim, 1)
         self.c = nn.Conv3d(dim, dim, 1)
         self.d = nn.Conv3d(dim, dim, 1)
-        self.alpha = nn.Parameter(torch.zeros(1))
     
     def forward(self, x):
         n, c, d, h, w = x.shape
@@ -578,7 +577,7 @@ class PositionalAttentionModule(nn.Module):
         D = self.d(x).flatten(2).transpose(1, 2)
         attn = (B @ C).softmax(dim=-1)
         y = (attn @ D).transpose(1, 2).reshape(n, c, d, h, w)
-        out = self.alpha * y + x
+        out = y + x
         return out
 
 
@@ -599,7 +598,11 @@ class SKAttentionModule(nn.Module):
             nn.LeakyReLU()
         )
         self.avgpool = nn.AdaptiveAvgPool3d(1)
-        
+        # self.fc = nn.Sequential(
+        #     nn.Linear(planes, d),
+        #     nn.BatchNorm1d(d),
+        #     nn.LeakyReLU()
+        # )
         self.fc = nn.Linear(planes, d)
         self.fc_norm = nn.BatchNorm1d(d)
         self.fc_act = nn.LeakyReLU()
@@ -615,6 +618,7 @@ class SKAttentionModule(nn.Module):
         s = self.avgpool(u).flatten(1)
         
         z = self.fc(s)
+        
         z = self.fc_act(z if z.shape[0] == 1 else self.fc_norm(z))
         
         attn_scores = torch.cat([self.fc1(z), self.fc2(z)], dim=1)
@@ -670,18 +674,34 @@ class MSLKA3AttentionModule(nn.Module):
 
 
 class BridgeModule(nn.Module):
-    def __init__(self, feats:list[int], c_attn_block:nn.Module=nn.Identity, s_attn_block:nn.Module=nn.Identity, mlk_attn_block:nn.Module=nn.Identity):
+    def __init__(self, 
+                 feats:list[int], 
+                 c_attn_block:nn.Module=nn.Identity, 
+                 s_attn_block:nn.Module=nn.Identity, 
+                 m_attn_block:nn.Module=nn.Identity,
+                 use_weigths=False
+                 ):
         super().__init__()
-        ifeats = feats[::-1]
-        self.act = nn.GELU()
+        ifeats = feats[::-1]   
         
-        self.ms_lkas = nn.ModuleList()
-        self.c_atts, self.s_atts = nn.ModuleList(), nn.ModuleList()
+        self.use_c = False if c_attn_block == nn.Identity else True
+        self.use_s = False if s_attn_block == nn.Identity else True
+        self.use_m = False if m_attn_block == nn.Identity else True
+        
+        self.use_weigths = use_weigths
+        if use_weigths:
+            self.c_w = nn.Parameter(torch.zeros(len(feats)))
+            self.s_w = nn.Parameter(torch.zeros(len(feats)))
+            self.m_w = nn.Parameter(torch.zeros(len(feats)))
+
+                    
+        self.act = nn.GELU()
+        self.m_atts, self.c_atts, self.s_atts = nn.ModuleList(), nn.ModuleList(), nn.ModuleList()
         self.norms = nn.ModuleList()
         for feat in ifeats:
             self.c_atts.append(c_attn_block(feat))
             self.s_atts.append(s_attn_block(feat))
-            self.ms_lkas.append(mlk_attn_block(feat))
+            self.m_atts.append(m_attn_block(feat))
             self.norms.append(nn.BatchNorm3d(feat))
             
         self.ups = nn.ModuleList()
@@ -713,16 +733,20 @@ class BridgeModule(nn.Module):
         i = 0
         last_x = None
         outs = []
-        for x, ca, sa, ma, norm in zip(skips[::-1], self.c_atts, self.s_atts, self.ms_lkas, self.norms):
+        for x, ca, sa, ma, norm in zip(skips[::-1], self.c_atts, self.s_atts, self.m_atts, self.norms):
             if i>0:
                 x = x + self.ups[i-1](last_x)
-                
-            c_att = ca(x)
-            s_att = sa(x)
-            m_att = ma(x + self._aggregate(skips, x.shape))
-            att = c_att + s_att + m_att
+
+            c_att = ca(x) if self.use_c else 0
+            s_att = sa(x) if self.use_c else 0
+            m_att = ma(x + self._aggregate(skips, x.shape)) if self.use_m else 0
             
-            x = norm(x*att + x)
+            if self.use_weigths:
+                att = self.c_w[i]*c_att + self.s_w[i]*s_att + self.m_w[i]*m_att
+            else:
+                att = c_att + s_att + m_att
+                
+            x = norm(att + x)
             outs.append(x)
 
             last_x = x.clone()
@@ -735,12 +759,14 @@ class BridgeModule(nn.Module):
 
 class Model_Bridge(nn.Module):
     def __init__(self, spatial_shapes, do_ds=False, in_channels=4, out_channels=3,
-                 
                  # encoder params
                  cnn_kernel_sizes=[5,3], cnn_features=[32,64], cnn_strides=[2,2], cnn_maxpools=[0,1], cnn_dropouts=0.1, cnn_deforms=[True, True],
                  hyb_use_cnn=[True, True], hyb_kernel_sizes=[3,3,3], hyb_features=[128,256,512], hyb_strides=[2,2,2], hyb_maxpools=[0,0,0], hyb_cnn_dropouts=0.1, 
                  hyb_tf_proj_sizes=[32, 64, 64], hyb_tf_repeats=[3,3,3], hyb_tf_num_heads=[4,4,4], hyb_tf_dropouts=0.15, hyb_deforms=[False, False],
-
+                 
+                 # bridge params
+                 br_skip_levels=[0,1,2,3], br_c_attn_use=True, br_s_att_use=True, br_m_att_use=True, br_use_p_ttn_w=True,
+                
                  # decoder params
                  dec_hyb_tcv_kernel_sizes=[5,5,5], dec_cnn_tcv_kernel_sizes=[5,5,5], dec_cnn_deforms=None,
                  dec_hyb_use_cnn=None, dec_hyb_kernel_sizes=None, dec_hyb_features=None, dec_hyb_cnn_dropouts=None, 
@@ -750,6 +776,13 @@ class Model_Bridge(nn.Module):
         super().__init__()
         self.do_ds = do_ds
         
+        # bridge params
+        self.br_skip_levels = br_skip_levels
+        self.br_c_attn_use = br_c_attn_use
+        self.br_s_att_use = br_s_att_use
+        self.br_m_att_use = br_m_att_use
+        self.br_use_p_ttn_w = br_use_p_ttn_w
+                
         # ------------------------------------- Vars Prepration --------------------------------
         spatial_dims = len(spatial_shapes)
         init_features = cnn_features[0]//2
@@ -784,7 +817,6 @@ class Model_Bridge(nn.Module):
         if not dec_cnn_kernel_sizes : dec_cnn_kernel_sizes = cnn_kernel_sizes[::-1]
         if not dec_cnn_dropouts     : dec_cnn_dropouts = cnn_dropouts[::-1]
         if not dec_cnn_deforms      : dec_cnn_deforms = cnn_deforms[::-1]
-        
 
         # calculate spatial_shapes in encoder and decoder diferent layers
         enc_spatial_shaps = [spatial_shapes]
@@ -801,7 +833,6 @@ class Model_Bridge(nn.Module):
         # calc hyb_tf_input_sizes corresponding cnn_strides and hyb_strides
         enc_hyb_tf_input_sizes = [np.prod(ss, dtype=int) for ss in enc_hyb_spatial_shaps]
         dec_hyb_tf_input_sizes = [np.prod(ss, dtype=int) for ss in dec_hyb_spatial_shaps]
-        
         
         # ------------------------------------- Initialization --------------------------------
         self.init = nn.Sequential(
@@ -879,11 +910,14 @@ class Model_Bridge(nn.Module):
             dropout=0
         )
         
+        
+        feats = cnn_features+hyb_features[:-1]
         self.bridge = BridgeModule(
-            feats=(cnn_features+hyb_features)[:-1],
-            c_attn_block=GateChannelAttentionModule,
-            s_attn_block=partial(SKAttentionModule, groups=8),
-            mlk_attn_block=MSLKA3AttentionModule
+            feats=[feats[i] for i in self.br_skip_levels],
+            c_attn_block=GateChannelAttentionModule if self.br_c_att_use else nn.Identity,
+            s_attn_block=partial(SKAttentionModule, groups=8) if self.br_s_att_use else nn.Identity,
+            m_attn_block=MultiScaleLKA3DModule if self.br_m_att_use else nn.Identity,
+            use_weigths=self.br_use_p_ttn_w
         )
         
         self.num_classes = out_channels
@@ -892,21 +926,30 @@ class Model_Bridge(nn.Module):
     def forward(self, x):
         x = self.init(x)
         r = x.clone()
-        
+
         x, cnn_skips = self.cnn_encoder(x)
         # print(f"after x, cnn_skips = self.cnn_encoder(x) | x:{x.shape}")
         x, hyb_skips = self.hyb_encoder(x)
         # print(f"after x, hyb_skips = self.hyb_encoder(x) | x:{x.shape}")
+
+        skips = cnn_skips+hyb_skips[:-1]
+        r_skips = self.bridge(*[skips[i] for i in self.br_skip_levels])
         
-        upper_skips = cnn_skips+hyb_skips[:-1]
-        _upper_skips = self.bridge(*upper_skips)
-        cnn_skips = _upper_skips[:len(cnn_skips)]
-        hyb_skips[:-1] = _upper_skips[len(cnn_skips):]
+        
+        
+        _skips = []
+        for i in range(len(skips)):
+            _skips.append(r_skips[i] if i in self.br_skip_levels else skips[i])
+        
+        
+        
+        cnn_skips = _skips[:len(cnn_skips)]
+        hyb_skips[:-1] = _skips[len(cnn_skips):]
+        
 
         if self.do_ds:
             x, hyb_outs = self.hyb_decoder(x, hyb_skips[:-1], return_outs=True)
             x, cnn_outs = self.cnn_decoder(x, cnn_skips, return_outs=True)
-            
         else:
             x = self.hyb_decoder(x, hyb_skips[:-1])
             # print(f"after x = self.hyb_decoder(x, hyb_skips) | x:{x.shape}")
