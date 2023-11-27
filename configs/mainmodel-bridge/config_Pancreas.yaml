@@ -27,7 +27,7 @@ training:
   optimizer:
     name: 'SGD'
     params:
-      lr: 0.03
+      lr: 0.01
       momentum: 0.9
       weight_decay: 0.0001
   scheduler:
@@ -38,7 +38,7 @@ training:
         mode: 'min'
   epochs: 300
 model: 
-  name: 'MainModel-bridge_SGD_PANCREAS_light_dnnn_lr_0.03_batch_2'
+  name: 'MainModel-bridge_SGD_PANCREAS_light_nnnn_lr_0.01_batch_2_all'
   params:
     # in_channels: 4
     # out_channels: 3
@@ -63,8 +63,8 @@ model:
     hyb_tf_proj_sizes: [32,64,64]
     hyb_tf_repeats: [1,1,1]
     hyb_tf_num_heads: [2,4,8]
-    hyb_tf_dropouts: 0.15
-    cnn_deforms: [true, true]
+    hyb_tf_dropouts: 0.0
+    cnn_deforms: [false, false]
     hyb_use_cnn: [true,true,true]
     hyb_deforms: [false,false,false]
 
