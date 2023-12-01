@@ -68,6 +68,16 @@ model:
     hyb_use_cnn: [true,true,true]
     hyb_deforms: [false,false,false]
 
+    hyb_tf_block: 0
+      # -> 0 : TransformerBlock_Deform_LKA_Channel,
+      # -> 1 : TransformerBlock_Deform_LKA_Channel_V2,
+      # -> 2 : TransformerBlock_Deform_LKA_Spatial,
+      # -> 3 : TransformerBlock_Deform_LKA_Spatial_V2,
+      # -> 4 : TransformerBlock_3D_single_deform_LKA,
+      # -> 5 : TransformerBlock_3D_single_deform_LKA_V2,
+      # -> 6 : TransformerBlock_Deform_LKA_SC,
+      # -> 7 : TransformerBlock_Deform_LKA_SC_V2
+
     # decoder params
     dec_hyb_tcv_kernel_sizes: [5,5,5]
     dec_cnn_tcv_kernel_sizes: [5,7]
@@ -87,6 +97,7 @@ model:
     dec_hyb_deforms: null
 
     # bridge 
+    br_use: true
     br_skip_levels: [0,1,2,3]
     br_c_attn_use: true 
     br_s_att_use: true 
