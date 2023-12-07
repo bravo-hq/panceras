@@ -14,6 +14,7 @@ from setuptools import setup
 
 requirements = ["torch", "torchvision"]
 
+
 def get_extensions():
     this_dir = os.path.dirname(os.path.abspath(__file__))
     extensions_dir = os.path.join(this_dir, "src")
@@ -38,7 +39,7 @@ def get_extensions():
             "-D__CUDA_NO_HALF2_OPERATORS__",
         ]
     else:
-        raise NotImplementedError('Cuda is not availabel')
+        raise NotImplementedError("Cuda is not availabel")
 
     sources = [os.path.join(extensions_dir, s) for s in sources]
     include_dirs = [extensions_dir]
@@ -53,13 +54,19 @@ def get_extensions():
     ]
     return ext_modules
 
+
 setup(
     name="D3D",
     version="1.0",
     author="yingxinyi",
     url="https://github.com/XinyiYing/D3Dnet",
     description="Deformable 3D Convolutional Network",
-    packages=find_packages(exclude=("configs", "tests",)),
+    packages=find_packages(
+        exclude=(
+            "configs",
+            "tests",
+        )
+    ),
     # install_requires=requirements,
     ext_modules=get_extensions(),
     cmdclass={"build_ext": torch.utils.cpp_extension.BuildExtension},

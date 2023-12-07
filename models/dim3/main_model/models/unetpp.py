@@ -6,7 +6,7 @@ from torch import nn
 from torch.nn.functional import softmax, sigmoid
 
 
-__all__ = ['UNet', 'NestedUNet']
+__all__ = ["UNet", "NestedUNet"]
 
 
 class VGGBlock(nn.Module):
@@ -37,7 +37,7 @@ class UNet(nn.Module):
         nb_filter = [32, 64, 128, 256, 512]
 
         self.pool = nn.MaxPool2d(2, 2)
-        self.up = nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True)
+        self.up = nn.Upsample(scale_factor=2, mode="bilinear", align_corners=True)
 
         self.conv0_0 = VGGBlock(input_channels, nb_filter[0], nb_filter[0])
         self.conv1_0 = VGGBlock(nb_filter[0], nb_filter[1], nb_filter[1])
@@ -45,13 +45,12 @@ class UNet(nn.Module):
         self.conv3_0 = VGGBlock(nb_filter[2], nb_filter[3], nb_filter[3])
         self.conv4_0 = VGGBlock(nb_filter[3], nb_filter[4], nb_filter[4])
 
-        self.conv3_1 = VGGBlock(nb_filter[3]+nb_filter[4], nb_filter[3], nb_filter[3])
-        self.conv2_2 = VGGBlock(nb_filter[2]+nb_filter[3], nb_filter[2], nb_filter[2])
-        self.conv1_3 = VGGBlock(nb_filter[1]+nb_filter[2], nb_filter[1], nb_filter[1])
-        self.conv0_4 = VGGBlock(nb_filter[0]+nb_filter[1], nb_filter[0], nb_filter[0])
+        self.conv3_1 = VGGBlock(nb_filter[3] + nb_filter[4], nb_filter[3], nb_filter[3])
+        self.conv2_2 = VGGBlock(nb_filter[2] + nb_filter[3], nb_filter[2], nb_filter[2])
+        self.conv1_3 = VGGBlock(nb_filter[1] + nb_filter[2], nb_filter[1], nb_filter[1])
+        self.conv0_4 = VGGBlock(nb_filter[0] + nb_filter[1], nb_filter[0], nb_filter[0])
 
         self.final = nn.Conv2d(nb_filter[0], num_classes, kernel_size=1)
-
 
     def forward(self, input):
         x0_0 = self.conv0_0(input)
@@ -78,7 +77,7 @@ class NestedUNet(nn.Module):
         self.deep_supervision = deep_supervision
 
         self.pool = nn.MaxPool2d(2, 2)
-        self.up = nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True)
+        self.up = nn.Upsample(scale_factor=2, mode="bilinear", align_corners=True)
 
         self.conv0_0 = VGGBlock(input_channels, nb_filter[0], nb_filter[0])
         self.conv1_0 = VGGBlock(nb_filter[0], nb_filter[1], nb_filter[1])
@@ -86,19 +85,31 @@ class NestedUNet(nn.Module):
         self.conv3_0 = VGGBlock(nb_filter[2], nb_filter[3], nb_filter[3])
         self.conv4_0 = VGGBlock(nb_filter[3], nb_filter[4], nb_filter[4])
 
-        self.conv0_1 = VGGBlock(nb_filter[0]+nb_filter[1], nb_filter[0], nb_filter[0])
-        self.conv1_1 = VGGBlock(nb_filter[1]+nb_filter[2], nb_filter[1], nb_filter[1])
-        self.conv2_1 = VGGBlock(nb_filter[2]+nb_filter[3], nb_filter[2], nb_filter[2])
-        self.conv3_1 = VGGBlock(nb_filter[3]+nb_filter[4], nb_filter[3], nb_filter[3])
+        self.conv0_1 = VGGBlock(nb_filter[0] + nb_filter[1], nb_filter[0], nb_filter[0])
+        self.conv1_1 = VGGBlock(nb_filter[1] + nb_filter[2], nb_filter[1], nb_filter[1])
+        self.conv2_1 = VGGBlock(nb_filter[2] + nb_filter[3], nb_filter[2], nb_filter[2])
+        self.conv3_1 = VGGBlock(nb_filter[3] + nb_filter[4], nb_filter[3], nb_filter[3])
 
-        self.conv0_2 = VGGBlock(nb_filter[0]*2+nb_filter[1], nb_filter[0], nb_filter[0])
-        self.conv1_2 = VGGBlock(nb_filter[1]*2+nb_filter[2], nb_filter[1], nb_filter[1])
-        self.conv2_2 = VGGBlock(nb_filter[2]*2+nb_filter[3], nb_filter[2], nb_filter[2])
+        self.conv0_2 = VGGBlock(
+            nb_filter[0] * 2 + nb_filter[1], nb_filter[0], nb_filter[0]
+        )
+        self.conv1_2 = VGGBlock(
+            nb_filter[1] * 2 + nb_filter[2], nb_filter[1], nb_filter[1]
+        )
+        self.conv2_2 = VGGBlock(
+            nb_filter[2] * 2 + nb_filter[3], nb_filter[2], nb_filter[2]
+        )
 
-        self.conv0_3 = VGGBlock(nb_filter[0]*3+nb_filter[1], nb_filter[0], nb_filter[0])
-        self.conv1_3 = VGGBlock(nb_filter[1]*3+nb_filter[2], nb_filter[1], nb_filter[1])
+        self.conv0_3 = VGGBlock(
+            nb_filter[0] * 3 + nb_filter[1], nb_filter[0], nb_filter[0]
+        )
+        self.conv1_3 = VGGBlock(
+            nb_filter[1] * 3 + nb_filter[2], nb_filter[1], nb_filter[1]
+        )
 
-        self.conv0_4 = VGGBlock(nb_filter[0]*4+nb_filter[1], nb_filter[0], nb_filter[0])
+        self.conv0_4 = VGGBlock(
+            nb_filter[0] * 4 + nb_filter[1], nb_filter[0], nb_filter[0]
+        )
 
         if self.deep_supervision:
             self.final1 = nn.Conv2d(nb_filter[0], num_classes, kernel_size=1)
@@ -107,7 +118,6 @@ class NestedUNet(nn.Module):
             self.final4 = nn.Conv2d(nb_filter[0], num_classes, kernel_size=1)
         else:
             self.final = nn.Conv2d(nb_filter[0], num_classes, kernel_size=1)
-
 
     def forward(self, input):
         x0_0 = self.conv0_0(input)

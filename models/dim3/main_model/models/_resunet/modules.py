@@ -1,6 +1,6 @@
 # https://github.com/rishikksh20/ResUnet/blob/master/core/modules.py
-    
-    
+
+
 import torch.nn as nn
 import torch
 
@@ -25,7 +25,6 @@ class ResidualConv(nn.Module):
         )
 
     def forward(self, x):
-
         return self.conv_block(x) + self.conv_skip(x)
 
 

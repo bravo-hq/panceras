@@ -35,28 +35,55 @@ class UnetResBlock(nn.Module):
         kernel_size: Union[Sequence[int], int],
         stride: Union[Sequence[int], int],
         norm_name: Union[Tuple, str],
-        act_name: Union[Tuple, str] = ("leakyrelu", {"inplace": True, "negative_slope": 0.01}),
+        act_name: Union[Tuple, str] = (
+            "leakyrelu",
+            {"inplace": True, "negative_slope": 0.01},
+        ),
         dropout: Optional[Union[Tuple, str, float]] = None,
     ):
         super().__init__()
         self.conv1 = get_conv_layer(
-            spatial_dims, in_channels, out_channels, kernel_size=kernel_size, stride=stride, dropout=dropout, conv_only=True
+            spatial_dims,
+            in_channels,
+            out_channels,
+            kernel_size=kernel_size,
+            stride=stride,
+            dropout=dropout,
+            conv_only=True,
         )
         self.conv2 = get_conv_layer(
-            spatial_dims, out_channels, out_channels, kernel_size=kernel_size, stride=1, dropout=dropout, conv_only=True
+            spatial_dims,
+            out_channels,
+            out_channels,
+            kernel_size=kernel_size,
+            stride=1,
+            dropout=dropout,
+            conv_only=True,
         )
         self.lrelu = get_act_layer(name=act_name)
-        self.norm1 = get_norm_layer(name=norm_name, spatial_dims=spatial_dims, channels=out_channels)
-        self.norm2 = get_norm_layer(name=norm_name, spatial_dims=spatial_dims, channels=out_channels)
+        self.norm1 = get_norm_layer(
+            name=norm_name, spatial_dims=spatial_dims, channels=out_channels
+        )
+        self.norm2 = get_norm_layer(
+            name=norm_name, spatial_dims=spatial_dims, channels=out_channels
+        )
         self.downsample = in_channels != out_channels
         stride_np = np.atleast_1d(stride)
         if not np.all(stride_np == 1):
             self.downsample = True
         if self.downsample:
             self.conv3 = get_conv_layer(
-                spatial_dims, in_channels, out_channels, kernel_size=1, stride=stride, dropout=dropout, conv_only=True
+                spatial_dims,
+                in_channels,
+                out_channels,
+                kernel_size=1,
+                stride=stride,
+                dropout=dropout,
+                conv_only=True,
             )
-            self.norm3 = get_norm_layer(name=norm_name, spatial_dims=spatial_dims, channels=out_channels)
+            self.norm3 = get_norm_layer(
+                name=norm_name, spatial_dims=spatial_dims, channels=out_channels
+            )
 
     def forward(self, inp):
         residual = inp
@@ -100,7 +127,10 @@ class UnetBasicBlock(nn.Module):
         kernel_size: Union[Sequence[int], int],
         stride: Union[Sequence[int], int],
         norm_name: Union[Tuple, str],
-        act_name: Union[Tuple, str] = ("leakyrelu", {"inplace": True, "negative_slope": 0.01}),
+        act_name: Union[Tuple, str] = (
+            "leakyrelu",
+            {"inplace": True, "negative_slope": 0.01},
+        ),
         dropout: Optional[Union[Tuple, str, float]] = None,
     ):
         super().__init__()
@@ -114,11 +144,21 @@ class UnetBasicBlock(nn.Module):
             conv_only=True,
         )
         self.conv2 = get_conv_layer(
-            spatial_dims, out_channels, out_channels, kernel_size=kernel_size, stride=1, dropout=dropout, conv_only=True
+            spatial_dims,
+            out_channels,
+            out_channels,
+            kernel_size=kernel_size,
+            stride=1,
+            dropout=dropout,
+            conv_only=True,
         )
         self.lrelu = get_act_layer(name=act_name)
-        self.norm1 = get_norm_layer(name=norm_name, spatial_dims=spatial_dims, channels=out_channels)
-        self.norm2 = get_norm_layer(name=norm_name, spatial_dims=spatial_dims, channels=out_channels)
+        self.norm1 = get_norm_layer(
+            name=norm_name, spatial_dims=spatial_dims, channels=out_channels
+        )
+        self.norm2 = get_norm_layer(
+            name=norm_name, spatial_dims=spatial_dims, channels=out_channels
+        )
 
     def forward(self, inp):
         out = self.conv1(inp)
@@ -159,7 +199,10 @@ class UnetUpBlock(nn.Module):
         stride: Union[Sequence[int], int],
         upsample_kernel_size: Union[Sequence[int], int],
         norm_name: Union[Tuple, str],
-        act_name: Union[Tuple, str] = ("leakyrelu", {"inplace": True, "negative_slope": 0.01}),
+        act_name: Union[Tuple, str] = (
+            "leakyrelu",
+            {"inplace": True, "negative_slope": 0.01},
+        ),
         dropout: Optional[Union[Tuple, str, float]] = None,
         trans_bias: bool = False,
     ):
@@ -197,11 +240,22 @@ class UnetUpBlock(nn.Module):
 
 class UnetOutBlock(nn.Module):
     def __init__(
-        self, spatial_dims: int, in_channels: int, out_channels: int, dropout: Optional[Union[Tuple, str, float]] = None
+        self,
+        spatial_dims: int,
+        in_channels: int,
+        out_channels: int,
+        dropout: Optional[Union[Tuple, str, float]] = None,
     ):
         super().__init__()
         self.conv = get_conv_layer(
-            spatial_dims, in_channels, out_channels, kernel_size=1, stride=1, dropout=dropout, bias=True, conv_only=True
+            spatial_dims,
+            in_channels,
+            out_channels,
+            kernel_size=1,
+            stride=1,
+            dropout=dropout,
+            bias=True,
+            conv_only=True,
         )
 
     def forward(self, inp):
@@ -245,19 +299,22 @@ def get_conv_layer(
 def get_padding(
     kernel_size: Union[Sequence[int], int], stride: Union[Sequence[int], int]
 ) -> Union[Tuple[int, ...], int]:
-
     kernel_size_np = np.atleast_1d(kernel_size)
     stride_np = np.atleast_1d(stride)
     padding_np = (kernel_size_np - stride_np + 1) / 2
     if np.min(padding_np) < 0:
-        raise AssertionError("padding value should not be negative, please change the kernel size and/or stride.")
+        raise AssertionError(
+            "padding value should not be negative, please change the kernel size and/or stride."
+        )
     padding = tuple(int(p) for p in padding_np)
 
     return padding if len(padding) > 1 else padding[0]
 
 
 def get_output_padding(
-    kernel_size: Union[Sequence[int], int], stride: Union[Sequence[int], int], padding: Union[Sequence[int], int]
+    kernel_size: Union[Sequence[int], int],
+    stride: Union[Sequence[int], int],
+    padding: Union[Sequence[int], int],
 ) -> Union[Tuple[int, ...], int]:
     kernel_size_np = np.atleast_1d(kernel_size)
     stride_np = np.atleast_1d(stride)
@@ -265,7 +322,9 @@ def get_output_padding(
 
     out_padding_np = 2 * padding_np + stride_np - kernel_size_np
     if np.min(out_padding_np) < 0:
-        raise AssertionError("out_padding value should not be negative, please change the kernel size and/or stride.")
+        raise AssertionError(
+            "out_padding value should not be negative, please change the kernel size and/or stride."
+        )
     out_padding = tuple(int(p) for p in out_padding_np)
 
     return out_padding if len(out_padding) > 1 else out_padding[0]
