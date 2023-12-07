@@ -1,5 +1,6 @@
 import torch
 from torch import nn
+from torch.nn import functional as F
 from timm.models.layers import trunc_normal_
 from typing import Sequence, Tuple, Union
 from monai.networks.layers.utils import get_norm_layer
@@ -176,9 +177,9 @@ class DLKAFormer_DecoderBlock(BaseBlock):
                         stride=1,
                         padding=get_padding(cnn_kernel_size, stride=1),
                     ),
-                    nn.BatchNorm3d(cnn_out_channels),
-                    nn.LayerNorm([cnn_out_channels]),
                     nn.PReLU(),
+                    nn.BatchNorm3d(cnn_out_channels),
+                    # nn.LayerNorm([cnn_out_channels]),
                 )
             else:
                 self.cnn = cnn_block(
@@ -205,7 +206,7 @@ class DLKAFormer_DecoderBlock(BaseBlock):
             )
             self.blocks.append(self.tcv)
             self.blocks.append(nn.PReLU())
-            self.blocks.append(nn.BatchNorm3d(out_channels))
+            # self.blocks.append(nn.BatchNorm3d(out_channels))
 
         self.apply(self._init_weights)
 
@@ -215,7 +216,10 @@ class DLKAFormer_DecoderBlock(BaseBlock):
             x = torch.concatenate([x, skip], dim=1)
         for block in self.blocks:
             x = block(x)
+
+        x = F.layer_norm(x, normalized_shape=x.shape[2:])
         # print(f"\t after x: {x.shape}\n")
+
         return x
 
 
