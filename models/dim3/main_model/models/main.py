@@ -1168,7 +1168,7 @@ class Model_Bridge(nn.Module):
         # ------------------------------------- Initialization --------------------------------
         self.init = nn.Sequential(
             nn.Conv3d(in_channels, init_features, 1),
-            nn.BatchNorm3d(init_features),
+            # nn.BatchNorm3d(init_features),
             nn.PReLU(),
         )
 
@@ -1288,6 +1288,8 @@ class Model_Bridge(nn.Module):
             # x, cnn_skips = self.cnn_context_bridge(x, cnn_skips)
             x = self.cnn_decoder(x, cnn_skips)
             # print(f"after x = self.cnn_decoder(x, cnn_skips) | x:{x.shape}")
+
+        r = F.layer_norm(r, normalized_shape=r.shape[2:])
 
         x = torch.concatenate([x, r], dim=1)
         x = self.out(x)
