@@ -614,8 +614,8 @@ class Model_Base(nn.Module):
         # ------------------------------------- Initialization --------------------------------
         self.init = nn.Sequential(
             nn.Conv3d(in_channels, init_features, 1),
-            nn.BatchNorm3d(init_features),
             nn.PReLU(),
+            nn.BatchNorm3d(init_features),
         )
 
         # ------------------------------------- Encoder --------------------------------
@@ -893,14 +893,14 @@ class BridgeModule(nn.Module):
             nn.ModuleList(),
             nn.ModuleList(),
         )
-        # self.norms = nn.ModuleList()
+        self.norms = nn.ModuleList()
         # self.norms_atts = nn.ModuleList()
         # self.norms_x = nn.ModuleList()
         for feat in ifeats:
             self.c_atts.append(c_attn_block(feat))
             self.s_atts.append(s_attn_block(feat))
             self.m_atts.append(m_attn_block(feat))
-            # self.norms.append(nn.BatchNorm3d(feat))
+            self.norms.append(nn.BatchNorm3d(feat))
             # self.norms_atts.append(nn.BatchNorm3d(feat))
             # self.norms_x.append(nn.BatchNorm3d(feat))
 
@@ -915,33 +915,41 @@ class BridgeModule(nn.Module):
             )
 
         self.projs = nn.ModuleDict()
+        self.proj_norms = nn.ModuleDict()
         for f1 in feats:
             for f2 in feats:
                 self.projs[f"{f1}->{f2}"] = (
-                    nn.Conv3d(f1, f2, kernel_size=1, padding=0)
-                    if f1 != f2
-                    else nn.Identity()
+                    nn.Sequential(nn.Conv3d(f1, f2, kernel_size=1, padding=0), nn.GELU())
+#                     if f1 != f2
+#                     else nn.Identity()
                 )
+#             self.proj_norms[f"n{f1}"] = (
+#                 nn.BatchNorm3d(f1)
+#             )
 
     def _aggregate(self, skips, out_shape):
         feat = out_shape[1]
         special_shape = out_shape[2:]
         agg = torch.zeros(out_shape).to(skips[0].device)
         for skip in skips:
+#             if (skip.shape == out_shape).all(): continue
             ps = self.projs[f"{skip.shape[1]}->{feat}"](skip)
-            ps = self.act(ps)
-            agg = agg + F.interpolate(ps, size=special_shape)
+            ps = F.interpolate(ps, size=special_shape)
+#             ps = self.proj_norms[f"{skip.shape[1]}->{feat}"](ps)
+            agg = agg + ps
+#         agg = self.proj_norms[f"n{feat}"](agg)
         return agg
 
     def forward(self, *skips):
         i = 0
         last_x = None
         outs = []
-        for x, ca, sa, ma in zip(
+        for x, ca, sa, ma, norm in zip(
             skips[::-1],
             self.c_atts,
             self.s_atts,
-            self.m_atts,  # , self.norms, self.norms_atts, self.norms_x
+            self.m_atts,  
+            self.norms#, self.norms_atts, self.norms_x
         ):
             _x = x.clone()
             if i > 0:
@@ -956,11 +964,10 @@ class BridgeModule(nn.Module):
             else:
                 att = c_att + s_att + m_att
 
-            att = F.layer_norm(att, normalized_shape=att.shape[2:])
-            x = F.layer_norm(x, normalized_shape=x.shape[2:])
+#             att = F.layer_norm(att, normalized_shape=att.shape[2:])
+#             x = F.layer_norm(x, normalized_shape=x.shape[2:])
 
-            x = x + att
-            # x = norm(att + x)
+            x = norm(att+x)
             outs.append(x)
 
             last_x = x.clone()
@@ -1168,8 +1175,8 @@ class Model_Bridge(nn.Module):
         # ------------------------------------- Initialization --------------------------------
         self.init = nn.Sequential(
             nn.Conv3d(in_channels, init_features, 1),
-            # nn.BatchNorm3d(init_features),
             nn.PReLU(),
+            nn.BatchNorm3d(init_features),
         )
 
         # ------------------------------------- Encoder --------------------------------
@@ -1288,8 +1295,6 @@ class Model_Bridge(nn.Module):
             # x, cnn_skips = self.cnn_context_bridge(x, cnn_skips)
             x = self.cnn_decoder(x, cnn_skips)
             # print(f"after x = self.cnn_decoder(x, cnn_skips) | x:{x.shape}")
-
-        r = F.layer_norm(r, normalized_shape=r.shape[2:])
 
         x = torch.concatenate([x, r], dim=1)
         x = self.out(x)
