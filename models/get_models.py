@@ -18,7 +18,8 @@ import platform
 if platform.system() == "Linux":
     from models.dim3.main_model.models.dLKA import Model as MainModel_per
     from models.dim3.main_model.models.main import Model_Base as MainModel
-    from models.dim3.main_model.models.main import Model_Bridge as MainModel_bridge
+    # from models.dim3.main_model.models.main import Model_Bridge as MainModel_bridge
+    from models.dim3.lhunet.model import LHUNet as MainModel_bridge
 from monai.networks.nets import SwinUNETR, UNETR, SegResNetVAE
 from networks.d_lka_former.d_lka_net_synapse import D_LKA_Net
 from networks.d_lka_former.transformerblock import (

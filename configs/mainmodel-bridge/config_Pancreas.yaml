@@ -38,50 +38,46 @@ training:
         mode: 'min'
   epochs: 300
 model: 
-  name: 'MainModel-bridge_SGD_PANCREAS_light_nnnn_lr_0.01_batch_2_MSC_channel_att_Mnonormall'
-  params:
-    # in_channels: 4
-    # out_channels: 3
-    # f_maps: 32
-
-
+  name: 'MainModel-bridge_SGD_PANCREAS_lhUNET'
+  params: # the class arguments defined above
     spatial_shapes: [96, 96, 96]
-    in_channels: 1
-    out_channels: 2
-                 
+    do_ds: false # Deep Supervision
+    in_channels: 4
+    out_channels: 3
+        
     # encoder params
     cnn_kernel_sizes: [5,3]
     cnn_features: [16,16]
     cnn_strides: [2,2]
     cnn_maxpools: [false, true]
     cnn_dropouts: 0.0
+    cnn_blocks: nn # n: resunet, d: deformconv, b: basicunet
     hyb_kernel_sizes: [3,3,3]
     hyb_features: [32,64,128]
     hyb_strides: [2,2,2]
-    hyb_maxpools: [true, true, true]
+    hyb_maxpools: [false,false,false]
     hyb_cnn_dropouts: 0.0
-    hyb_tf_proj_sizes: [32,64,64]
+    hyb_tf_proj_sizes: [32,64,128]
     hyb_tf_repeats: [1,1,1]
-    hyb_tf_num_heads: [2,4,8]
-    hyb_tf_dropouts: 0.0
-    cnn_deforms: [false, false]
-    hyb_use_cnn: [true,true,true]
-    hyb_deforms: [false,false,false]
+    hyb_tf_num_heads: [4,8,8]
+    hyb_tf_dropouts: 0.15
+    hyb_cnn_blocks: nnn # n: resunet, d: deformconv, b: basicunet
+    hyb_vit_blocks: ssc # s: dlka_special_attn, c: dlka_channel_attn
 
-    hyb_tf_block: 0
-      # -> 0 : TransformerBlock_Deform_LKA_Channel,
-      # -> 1 : TransformerBlock_Deform_LKA_Channel_V2,
-      # -> 2 : TransformerBlock_Deform_LKA_Spatial,
-      # -> 3 : TransformerBlock_Deform_LKA_Spatial_V2,
-      # -> 4 : TransformerBlock_3D_single_deform_LKA,
-      # -> 5 : TransformerBlock_3D_single_deform_LKA_V2,
-      # -> 6 : TransformerBlock_Deform_LKA_SC,
-      # -> 7 : TransformerBlock_Deform_LKA_SC_V2
-
+    # bridge 
+    br_use: true
+    br_skip_levels: [0,1,2,3]
+    br_c_attn_use: true 
+    br_s_att_use: true 
+    br_m_att_use: true 
+    br_use_p_ttn_w: true
+                
     # decoder params
     dec_hyb_tcv_kernel_sizes: [5,5,5]
     dec_cnn_tcv_kernel_sizes: [5,7]
-    
+    dec_cnn_blocks: null
+    dec_tcv_bias: false
+    dec_hyb_tcv_bias: false
     dec_hyb_kernel_sizes: null
     dec_hyb_features: null
     dec_hyb_cnn_dropouts: null
@@ -92,14 +88,6 @@ model:
     dec_cnn_kernel_sizes: null
     dec_cnn_features: null
     dec_cnn_dropouts: null
+    dec_hyb_cnn_blocks: null
+    dec_hyb_vit_blocks: null
 
-    dec_cnn_deforms: [false, false]
-    dec_hyb_deforms: null
-
-    # bridge 
-    br_use: false
-    br_skip_levels: [0,1,2,3]
-    br_c_attn_use: true 
-    br_s_att_use: true 
-    br_m_att_use: true 
-    br_use_p_ttn_w: true
