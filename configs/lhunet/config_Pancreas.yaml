@@ -38,7 +38,7 @@ training:
         mode: 'min'
   epochs: 300
 model: 
-  name: 'lhUNET_SGD_PANCREAS'
+  name: 'lhUNET_SGD_PANCREAS_updated_transormer_file'
   params: # the class arguments defined above
     spatial_shapes: [96, 96, 96]
     do_ds: false # Deep Supervision
