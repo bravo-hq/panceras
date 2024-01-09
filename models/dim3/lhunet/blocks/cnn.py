@@ -7,7 +7,7 @@ import torch.nn as nn
 from monai.networks.layers.utils import get_act_layer, get_norm_layer
 
 from .base import BaseBlock, get_conv_layer, get_padding
-from modules.deform_conv import DeformConvPack
+from ..modules.deform_conv import DeformConvPack
 
 
 __all__ = ['CNNEncoder', 'CNNDecoder', 'get_cnn_block']
@@ -386,12 +386,17 @@ class CNNDecoder(BaseBlock):
         self.apply(self._init_weights)
 
 
-    def forward(self, x, skips: list, return_outs=False):
+    def forward(self, x, skips: list, return_outs=False, skip_sum=False):
         outs = []
         for up, conv in zip(self.ups, self.convs):
+            # print(f"x: {x.shape}, skip: {skips[-1].shape}")
             x = up(x)
-            print(f"x: {x.shape}, skip: {skips[-1].shape}")
-            x = torch.cat((x, skips.pop()), dim=1)
+            
+            if skip_sum:
+                x = x + skips.pop()
+            else:
+                x = torch.cat((x, skips.pop()), dim=1)
+                
             x = conv(x)
             if return_outs: outs.append(x.clone())
         return (x, outs) if return_outs else x
