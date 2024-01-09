@@ -6,7 +6,7 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 
-from modules.vit.transformers import (
+from ..modules.vit.transformers import (
     TransformerBlock,
     TransformerBlock_3D_LKA,
     TransformerBlock_LKA_Channel,
