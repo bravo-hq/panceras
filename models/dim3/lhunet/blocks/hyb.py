@@ -1,7 +1,4 @@
-from typing import Optional, Sequence, Tuple, Union, Any
-from functools import partial
-
-import numpy as np
+from typing import Any
 import torch
 from torch import nn
 from torch.nn import functional as F
@@ -21,6 +18,23 @@ from ..modules.vit.transformers import (
     TransformerBlock_Deform_LKA_Channel_V2,
     TransformerBlock_Deform_LKA_Spatial_V2,
     TransformerBlock_3D_single_deform_LKA_V2,
+)
+
+from ..modules.vit.blocks import (    
+    # TransformerBlock_LKA3D_571,
+    # TransformerBlock_LKA3D_5731,
+    # TransformerBlock_DLKA3D_single,
+    TransformerBlock_DLKA3D_SpatialSequential,
+    TransformerBlock_DLKA3D_ChannelSequential,
+    TransformerBlock_3D_ChannelAtt_ONLY,
+    # TransformerBlock_LKA3D_SpatialParallel,
+    # TransformerBlock_DLKA3D_SpatialParallel,
+    # TransformerBlock_LKA_ChannelNormParallel,
+    # TransformerBlock_DLKA3D_ChannelParallel,
+    # TransformerBlock_LKA3D_ChannelParallel_tempsphead,
+    # TransformerBlock_3D_EPA,
+    # TransformerBlock_3D_EA,
+    # TransformerBlock_3D_SE,
 )
 
 from .base import BaseBlock, get_conv_layer
@@ -54,6 +68,12 @@ def get_vit_block(code):
     elif code == 'S': return TransformerBlock_Deform_LKA_Spatial_sequential
     elif code == 'R': return TransformerBlock_3D_single_deform_LKA
     elif code == 'B': return TransformerBlock_Deform_LKA_SC_sequential
+    
+    # new blocks
+    elif code == 'L': return TransformerBlock_3D_ChannelAtt_ONLY
+    elif code == 'Z': return TransformerBlock_DLKA3D_ChannelSequential
+    elif code == 'X': return TransformerBlock_DLKA3D_SpatialSequential
+    
     else: raise NotImplementedError(f"Not implemented cnn-block for code:<{code}>")
 
 

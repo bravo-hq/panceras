@@ -31,6 +31,9 @@ from utils_yousef import load_config, print_config
 import os
 from test_pancreas import test_calculate_metric
 
+from fvcore.nn import FlopCountAnalysis
+from ptflops import get_model_complexity_info
+
 parser = argparse.ArgumentParser()
 parser.add_argument(
     "--root_path",
@@ -239,6 +242,33 @@ if __name__ == "__main__":
 
     # model_d_lka_former = create_model(name='dlka_former')
     model_d_lka_former = get_model(config).cuda()
+    
+    # calculate the params and FLOPs
+    n_parameters = sum(
+        p.numel() for p in model_d_lka_former.parameters() if p.requires_grad
+    )
+    print(f"Total trainable parameters: {round(n_parameters * 1e-6, 2)} M")
+    # self.log("n_parameters_M", round(n_parameters * 1e-6, 2))
+    input_res = (1 ,96,96,96)
+    input = torch.ones(()).new_empty(
+        (1, *input_res),
+        dtype=next(model_d_lka_former.parameters()).dtype,
+        device=next(model_d_lka_former.parameters()).device,
+    )
+
+    flops = FlopCountAnalysis(model_d_lka_former, input)
+    total_flops = flops.total()
+    print(f"MAdds: {round(total_flops * 1e-9, 2)} G")
+    # self.log("GFLOPS", round(total_flops * 1e-9, 2))
+
+    # ##### calculate the params and FLOPs (ptflops)
+    flops, params = get_model_complexity_info(
+        model_d_lka_former, input_res, as_strings=True, print_per_layer_stat=False
+    )
+    print("{:<30}  {:<8}".format("Computational complexity: ", flops))
+    print("{:<30}  {:<8}".format("Number of parameters: ", params))
+    # self.log("n_parameters_M", params)
+    # self.log("GFLOPS", flops)
     # model_d_lka_former = Model(
     #         spatial_shapes= [96, 96, 96],
     #         in_channels= 1,
